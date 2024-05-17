@@ -40,17 +40,17 @@ end
 ---@return string statusline
 function H.gengroup(group)
   local str = "%"
-  local hl = group.highlight and c.Highlight(group.highlight) or ""
   -- set left alignment
   if group.left then str = str .. "-" end
   -- set min width
   if group.min_width then str = str .. group.min_width end
   -- set max width
   if group.max_width then str = str .. "." .. group.max_width end
-  -- add highlight
-  str = str .. hl
   -- start group
   str = str .. "("
+  -- add highlight
+  local hl = group.highlight and c.Highlight(group.highlight) or ""
+  str = str .. hl
   -- add all the items
   for _, item in ipairs(group) do str = str .. H.genitem(item) .. hl end
   -- close the group

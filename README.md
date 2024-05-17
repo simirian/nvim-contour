@@ -1,27 +1,34 @@
 # Nvim Contour
 
-NeoVim statusline, tabline, and winbar plugin<br>
+NeoVim plugin for easy statusline, tabline, and winbar plugin<br>
 by simirian
 
 ## Features
 
-Contour aims to be a thin lua wrapper of the vim statusline API, with additional high-level components for easy setup.
-Contour lets you declare a statusline, tabline, or winbar as a list-like lua table, and will automatically generate and set everything needed.
-Note that when this document refers to **lines** it is referring to the statusline, winbar, and tabline.
-Special terms will be in **bold**.
+Contour aims to be a thin lua wrapper of the vim statusline API, with
+additional high-level components for easy setup. Contour lets you declare a
+statusline, tabline, or winbar as a list-like lua table, and will automatically
+generate and set everything needed. Note that when this document refers to
+**lines** it is referring to the statusline, winbar, and tabline. Special terms
+will be in **bold**.
 
 - [x] setup functions for all **lines**
 - [x] refresh functions for all **lines**
 - [x] automagically make lua functions work in any **line**
 - [x] group **items** with nested tables
 - [x] **components** (classes? constructors? idk what to call these)
-    - the custom **component** API is questionable, you have to `setmetatable()` your own tables, but it's not awful?
+    - the custom **component** API is questionable, you have to
+      `setmetatable()` your own tables, but it's not awful?
+- [ ] mouse callback functions
 - [ ] full support for `'statusline'` escapes
+    - maybe this is out of scope? we do strings already so we could just say
+      "read the docs" ...
 - [ ] many built-in **components**
-    - [x] tabs
-    - [x] buffers
-    - [ ] mode
-    - [ ] git
+    - [x] tabs (tab numbers)
+    - [x] buffers (buffers list)
+    - [x] tab buffers (tab numbers with a list of their buffers)
+    - [ ] vim mode
+    - [ ] git branch / status
     - [ ] diagnostics
 
 ## Installation
@@ -44,18 +51,21 @@ Lazy:
 
 ## Configuration
 
-Contour gives you three items to set up (all are optional): `contour.statusline`, `contour.winbar`, `contour.tabline`.
-These each have a `setup` function and a `refresh` function.
+Contour gives you three items to set up (all are optional):
+`contour.statusline`, `contour.winbar`, `contour.tabline`. These each have a
+`setup` function and a `refresh` function.
 
 - `setup` will set the **line** variable, `laststatus`, and `showtabline`.
-- `refresh` will redraw that **line** by using either `:redrawtabline` or `:redrawstatus!`
+- `refresh` will redraw that **line** by using either `:redrawtabline` or
+  `:redrawstatus!`
 
 ### Setup
 
-To use the setup functions, they need a **line** definition table.
-This table is a list of **items** and an optional default highlight group.
-The statusline also takes `mode` as a key and sets `laststatus`  to the key's value (`:help 'laststatus'`).
-The tabline accepts `mode` as a key and sets `showtabline` to its value (`:help 'showtabline'`).
+To use the setup functions, they need a **line** definition table. This table
+is a list of **items** and an optional default highlight group. The statusline
+also takes `mode` as a key and sets `laststatus`  to the key's value (`:help
+'laststatus'`). The tabline accepts `mode` as a key and sets `showtabline` to
+its value (`:help 'showtabline'`).
 
 ### Items
 
@@ -63,7 +73,8 @@ An **item** that can be added to a **line** is one of:
 
 - a string to place in a **line**, which CAN contain statusline escapes
 - a function to be called when the **line** is redrawn
-- a **component** (table) with a `_render()` function, which will be called when the **line** is redrawn
+- a **component** (table) with a `_render()` function, which will be called
+  when the **line** is redrawn
 - a **group** (table) which acts as a sublist of items
 
 ## Groups
@@ -77,15 +88,19 @@ An **item** that can be added to a **line** is one of:
 | `max_width` | number | The maximum width of this **group**. |
 | `highlight` | string | The default highlight group of this **group**. |
 
-Note that the **line** you give to the setup functions is a **group** without width or alignment, as those would be meaningless.
-If `highlight` is set after each item in the list the highlight will be set to the default, so components that set highlights should be put within subgroups.
+Note that the **line** you give to the setup functions is a **group** without
+width or alignment, as those would be meaningless. If `highlight` is set after
+each item in the list the highlight will be set to the default, so components
+that set highlights should be put within subgroups.
 
 ## Components
 
-This plugin provides a few preconfigured **components** in the module `contour.components`
-**Components** MUST define a `_render()` function to be called when the **line** is redrawn.
-To easily create your own **components**, it is recommended that you create a component table with a `render(self)` function, then set its metable to `components.component_metatable`.
-Then you will be able to use that component like the plugin's built-in components.
+This plugin provides a few preconfigured **components** in the module
+`contour.components` **Components** MUST define a `_render()` function to be
+called when the **line** is redrawn. To easily create your own **components**,
+it is recommended that you create a component table with a `render(self)`
+function, then set its metable to `components.component_metatable`. Then you
+will be able to use that component like the plugin's built-in components.
 
 Custom component example:
 
@@ -113,27 +128,32 @@ require("contour").tabline.setup{
 }
 ```
 
-> NOTE: This is a contrived example, and optimally you would just put `"%{fnamemodify(getcwd(), ':t')}"` in your **line** instead.
-> See `:help 'statusline'` to see how this works.
+> NOTE: This is a contrived example, and optimally you would just put
+> `"%{fnamemodify(getcwd(), ':t')}"` in your **line** instead. See `:help
+> 'statusline'` to see how this works.
 
 ### String Items
 
-There is a long table of string **items** that translate nearly one-to-one to statusline escapes.
-Any members of `contour.components` not named hereafter come from this list. (eg. `spacer`, `fullpath`, etc.)
-See `:help 'statusline'` to see where these come from, and use any that are not provided.
+There is a long table of string **items** that translate nearly one-to-one to
+statusline escapes. Any members of `contour.components` not named hereafter
+come from this list. (eg. `spacer`, `fullpath`, etc.) See `:help 'statusline'`
+to see where these come from, and use any that are not provided.
 
 ### Highlight
 
-This is a function that pretends to be a **component**, call it with a highlight group name to get a string that will set the highlight group.
-Call with nothing to reset the highlight group, this will vary between `StatusLine`, `WinBar`, and `TabLine` depending on which **line** it is used in.
-Call with a number from 1-9 to set the highlight to `User{number}`.
+This is a function that pretends to be a **component**, call it with a
+highlight group name to get a string that will set the highlight group. Call
+with nothing to reset the highlight group, this will vary between `StatusLine`,
+`WinBar`, and `TabLine` depending on which **line** it is used in. Call with a
+number from 1-9 to set the highlight to `User{number}`.
 
-> NOTE: Mostly used internally.
-> It is recommended that you use groups and their highlights instead of this fake **component**.
+> NOTE: Mostly used internally. It is recommended that you use groups and their
+> highlights instead of this fake **component**.
 
 ### Tabs
 
-This is a simple **component** that lists tabs by number, with mouse interaction and a close button.
+This is a simple **component** that lists tabs by number, with mouse
+interaction and a close button.
 
 | key | type | default | meaning |
 | --- | --- | --- | --- |
@@ -143,7 +163,8 @@ This is a simple **component** that lists tabs by number, with mouse interaction
 
 ### Buffers
 
-This is a simple **component** that lists buffers by name:number, and marks them if they are modified.
+This is a simple **component** that lists buffers by name:number, and marks
+them if they are modified.
 
 | key | type | default | meaning |
 | --- | --- | --- | --- |
