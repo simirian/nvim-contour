@@ -20,13 +20,20 @@ will be in **bold**.
     - the custom **component** API is questionable, you have to
       `setmetatable()` your own tables, but it's not awful?
 - [ ] mouse callback functions
-- [ ] full support for `'statusline'` escapes
-    - maybe this is out of scope? we do strings already so we could just say
-      "read the docs" ...
+- [x] ~~full support for `'statusline'` escapes~~
+    - this is out of scope: we do strings already so "read the docs" tm
+- [ ] high-level alternatives to statusline escapes
+    - [x] buffer name
+    - [x] buffer modified (attached to above)
+    - [ ] readonly buffer
+    - [x] filetype (icon on `Buf`)
+    - [ ] position
+    - [x] `%(%)` groups
 - [ ] many built-in **components**
     - [x] tabs (tab numbers)
     - [x] buffers (buffers list)
     - [x] tab buffers (tab numbers with a list of their buffers)
+    - [ ] buffer (includes name, filetype icon, modified icon)
     - [ ] vim mode
     - [ ] git branch / status
     - [ ] diagnostics
@@ -102,10 +109,12 @@ it is recommended that you create a component table with a `render(self)`
 function, then set its metable to `components.component_metatable`. Then you
 will be able to use that component like the plugin's built-in components.
 
-Custom component example:
+Usage example:
 
 ```lua
 local components = require("contour.components")
+-- let's pretend you have a globals module with nerdfont icons in it
+local globals = require("globals")
 
 -- create a RootDir component, that will display the cwd name
 local RootDir = setmetatable({
@@ -124,20 +133,41 @@ require("contour").tabline.setup{
   RootDir(),
   -- add some built-in components to flesh out the line
   components.spacer,
-  components.Tabs(),
+  -- provide a table to override the default values
+  components.Tabs{
+    -- override the default ascii with nerdfont icons
+    modified_icon = globals.icons.modified,
+    close_icon = globals.icons.close,
+  },
 }
 ```
 
 > NOTE: This is a contrived example, and optimally you would just put
-> `"%{fnamemodify(getcwd(), ':t')}"` in your **line** instead. See `:help
-> 'statusline'` to see how this works.
+> `"%{fnamemodify(getcwd(), ':t')}"` in your **line** instead of this RootDir
+> component. See `:help 'statusline'` to see how this works.
 
-### String Items
+By defualt all icons are ascii, to be compatible with non-gui environments and
+users without patched fonts. It is trivial to override this for each component
+by setting the its global values.
 
-There is a long table of string **items** that translate nearly one-to-one to
-statusline escapes. Any members of `contour.components` not named hereafter
-come from this list. (eg. `spacer`, `fullpath`, etc.) See `:help 'statusline'`
-to see where these come from, and use any that are not provided.
+Global overrides:
+
+```lua
+local components = require("contour.components")
+-- let's pretend you have a globals module with nerdfont icons in it
+local globals = require("globals")
+
+-- set the modified icon to a random string
+components.Buf.modified_icon = globals.icons.modified
+-- change the default name for files
+components.Buf.default_name = "?"
+
+-- now using `components`.Buf() will use these new settings
+```
+
+This can be done with any setting on any component. Note that
+[Highlight](#Highlight) pretends to be a component but is actually just a
+function.
 
 ### Highlight
 
@@ -149,6 +179,25 @@ number from 1-9 to set the highlight to `User{number}`.
 
 > NOTE: Mostly used internally. It is recommended that you use groups and their
 > highlights instead of this fake **component**.
+
+### Buf
+
+This component provides information about the a buffer. By default, gives
+information about the current buffer. It is used by [Buffers](#Buffers) and
+[TabBufs](#TabBufs) to render their buffers. Setting module settings for this
+component will also change the rendering of buffers in `Buffers` and `TabBufs`.
+Note that you can just override the `:render(bufnr)` function to completely
+change buffer rendering. The `bufnr` argument is used for buffer lists.
+
+| key | type | default | meaning |
+| --- | --- | --- | --- |
+| `highlight` | string | `""` | The highlight group for inactive buffers. Empty by default because this component may be used in the tabline OR the statusline. |
+| `highlight_sel` | string | `""` | The highlight group for active buffers. Empty as above. |
+| `filename` | `"filename"`\|`"fullpath"`\|`"relpath"` | `"filename"` | How the name of this buffer should be displayed. |
+| `default_name` | string | `"UNKNOWN"` | The default name for buffers whose names evaluate to empty after the above modifications. |
+| `modified_icon` | string | `"+"` | The indicator for modified files. |
+| `show_icon` | boolean | true | If the filetype icon should be shown. This is on by default, and will automatically turn off if `nvim-web-devicons` cannot be loaded. It is highly recommended that you do not turn this on manually. |
+| `show_bufnr` | boolean | false | If the bufner should be shown after the file name like so: `file.txt:23`. |
 
 ### Tabs
 
@@ -170,8 +219,22 @@ them if they are modified.
 | --- | --- | --- | --- |
 | `highlight` | string | `"TabLine"` | The highlight group for inactive tabs. |
 | `highlgiht_sel` | string | `"TabLine"` | The highlight group for the selected tab. |
-| `modified icon` | string | `"+"` | The icon shown when a file is modified. |
-| `show_bufnr` | boolean | `true` | If the buffer number should be shown after the buffer name. |
-| `buffers` | table | `{ buflisted = true, bufloaded = true }` | Criteria for buffers to be listed. See `:help getbufinfo()`. |
-| `default_name` | string | `UNNAMED` | The default file name for buffers whose names evaluate to empty with `:t`. See `:help filename-modifiers`. |
+| `buffers` | table | `{ buflisted = true, bufloaded = true }` | Criteria for buffers to be listed. See `:help getbufinfo()`. Modification not recommended. |
+
+Buffers uses the [Buf](#Buf) component internally, so also accepts its keys.
+
+### TabBufs
+
+This component lists tabs by their numbers, and within each tab label it will
+also list the buffers visible in that tab. This component inherits [Buf](#Buf)
+settigs for listing buffers.
+
+| key | type | default | meaning |
+| --- | --- | --- | --- |
+| `highlight` | string | `"TabLine"` | The highlight group for inactive tabs. |
+| `highlgiht_sel` | string | `"TabLine"` | The highlight group for the selected tab. |
+| `close_icon` | string | `"x"` | The clickable close icon. |
+| `buffers` | table | `{ buflisted = true, bufloaded = true }` | Criteria for buffers to be listed. See `:help getbufinfo()`. Modification not recommended. |
+
+TabBufs uses the [Buf](#Buf) component internally, so also accepts its key.
 
