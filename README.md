@@ -5,38 +5,35 @@ by simirian
 
 ## Features
 
-Contour aims to be a thin lua wrapper of the vim statusline API, with
-additional high-level components for easy setup. Contour lets you declare a
-statusline, tabline, or winbar as a list-like lua table, and will automatically
-generate and set everything needed. Note that when this document refers to
-**lines** it is referring to the statusline, winbar, and tabline. Special terms
-will be in **bold**.
+Contour aims to be a thin lua wrapper of the vim statusline API, with additional
+high-level components for easy setup. Contour lets you declare a statusline,
+tabline, or winbar as a list-like lua table with additional properties. It will
+automagically generate and set everything needed. Note that when this document
+refers to **lines** it is referring to the statusline, winbar, and tabline.
+Special terms will be in **bold**.
 
-- [x] setup functions for all **lines**
-- [x] refresh functions for all **lines**
+This plugin is best used with knowledge of the statusline api, see `:help
+statusline. Other parts of nvim's help documentation will be referenced
+throughout this README.
+
 - [x] automagically make lua functions work in any **line**
+- [ ] click callback functions
 - [x] group **items** with nested tables
-- [x] **components** (classes? constructors? idk what to call these)
-    - the custom **component** API is questionable, you have to
-      `setmetatable()` your own tables, but it's not awful?
 - [ ] mouse callback functions
-- [x] ~~full support for `'statusline'` escapes~~
-    - this is out of scope: we do strings already so "read the docs" tm
-- [ ] high-level alternatives to statusline escapes
-    - [x] buffer name
-    - [x] buffer modified (attached to above)
-    - [ ] readonly buffer
-    - [x] filetype (icon on `Buf`)
-    - [ ] position
-    - [x] `%(%)` groups
+- [x] ~~full support for statusline escapes~~
+    - this is out of scope: we do strings already so "read the docs"
+- [x] **components** (classes? constructors? idk what to call these)
+- [x] ~~high-level alternatives to statusline escapes~~
+    - again, this is out of scope: use a built-in component or just use
+      statusline escapes
 - [ ] many built-in **components**
     - [x] tabs (tab numbers)
     - [x] buffers (buffers list)
     - [x] tab buffers (tab numbers with a list of their buffers)
-    - [ ] buffer (includes name, filetype icon, modified icon)
-    - [ ] vim mode
-    - [ ] git branch / status
+    - [x] buffer (includes name, filetype icon, modified icon)
+    - [ ] vim mode display
     - [ ] diagnostics
+    - [ ] git branch / status
 
 ## Installation
 
@@ -48,10 +45,10 @@ Lazy:
   -- don't use the opts key, it's meaningless with three different setups
   config = function()
     local contour = require("contour")
-    contour.tabline.setup{
+    contour.statusline.setup{
       -- your config here
     }
-    -- statusline, etc.
+    -- other lines
   end,
 }
 ```
@@ -62,17 +59,16 @@ Contour gives you three items to set up (all are optional):
 `contour.statusline`, `contour.winbar`, `contour.tabline`. These each have a
 `setup` function and a `refresh` function.
 
-- `setup` will set the **line** variable, `laststatus`, and `showtabline`.
+- `setup` will set the **line** option, `laststatus`, and `showtabline`.
 - `refresh` will redraw that **line** by using either `:redrawtabline` or
   `:redrawstatus!`
 
 ### Setup
 
-To use the setup functions, they need a **line** definition table. This table
-is a list of **items** and an optional default highlight group. The statusline
-also takes `mode` as a key and sets `laststatus`  to the key's value (`:help
-'laststatus'`). The tabline accepts `mode` as a key and sets `showtabline` to
-its value (`:help 'showtabline'`).
+The setup functions all require a **line** spec, which is a list-like lua table
+of **item**s with an optional key for setting a highlight group. The statusline
+setup function also expects a mode to set `'laststatus'` to. The tabline setup
+function expects a mode to set `'showtabline'` to.
 
 ### Items
 
@@ -80,96 +76,53 @@ An **item** that can be added to a **line** is one of:
 
 - a string to place in a **line**, which CAN contain statusline escapes
 - a function to be called when the **line** is redrawn
-- a **component** (table) with a `_render()` function, which will be called
-  when the **line** is redrawn
+    - this function's output is treated as statusline text, so `%` escapes
+      *will* work
+- a **component** (table) with a `_render()` function, which will be called when
+  the **line** is redrawn
+    - the `_render()` function is processed as above, so the same applies to `%`
 - a **group** (table) which acts as a sublist of items
 
 ## Groups
 
 **Groups** are a list of **items**, with a few extra keys:
 
-| key | type | meaning |
-| --- | --- | --- |
-| `left` | boolean | Should this **group's** items be left-aligned WITHIN this group? |
-| `min_width` | number | The minimum width of this **group**. |
-| `max_width` | number | The maximum width of this **group**. |
-| `highlight` | string | The default highlight group of this **group**. |
+| key | type | default | meaning |
+| --- | --- | --- | --- |
+| `left` | boolean | right-aligned | Should this **group's** items be left-aligned WITHIN this group? |
+| `min_width` | number | no minimum | The minimum width of this **group**. |
+| `max_width` | number | no maximum | The maximum width of this **group**. |
+| `highlight` | string | no highlight override | The default highlight group of this **group**. |
 
 Note that the **line** you give to the setup functions is a **group** without
-width or alignment, as those would be meaningless. If `highlight` is set after
-each item in the list the highlight will be set to the default, so components
-that set highlights should be put within subgroups.
+width or alignment, as those would be meaningless. If `highlight` is set, then
+after each item in the list the highlight will be reset, so components that set
+highlights should be put within subgroups.
+
+Not supplying any of these keys will leave them as their default values.
 
 ## Components
 
 This plugin provides a few preconfigured **components** in the module
-`contour.components` **Components** MUST define a `_render()` function to be
-called when the **line** is redrawn. To easily create your own **components**,
-it is recommended that you create a component table with a `render(self)`
-function, then set its metable to `components.component_metatable`. Then you
-will be able to use that component like the plugin's built-in components.
+`contour.components`, and methods to make your own.
 
-Usage example:
+By defualt all icons use ascii, to be compatible with non-gui environments and
+users without patched fonts. It is trivial to override this globally for each
+component by setting the class fields.
 
 ```lua
-local components = require("contour.components")
+local c = require("contour.components")
 -- let's pretend you have a globals module with nerdfont icons in it
 local globals = require("globals")
 
--- create a RootDir component, that will display the cwd name
-local RootDir = setmetatable({
-  highlight = "Green",
-  -- this function gets called every time the line is redrawn
-  render = function(self)
-    return vim.fn.fnamemodify(vim.fn.getcwd(), "t")
-  end,
-  -- we setmetatable to make sure that the _render() function is created on call
-}, components.component_metatable)
-
-require("contour").tabline.setup{
-  -- always show tabline
-  mode = 2,
-  -- use call syntax to create a new component, think classes
-  RootDir(),
-  -- add some built-in components to flesh out the line
-  components.spacer,
-  -- provide a table to override the default values
-  components.Tabs{
-    -- override the default ascii with nerdfont icons
-    modified_icon = globals.icons.modified,
-    close_icon = globals.icons.close,
-  },
-}
+-- globally set the modified item icon to any string
+c.buffer.modified_icon = globals.icons.modified
+c.tablist.modified_icon = globals.icons.modified
 ```
-
-> NOTE: This is a contrived example, and optimally you would just put
-> `"%{fnamemodify(getcwd(), ':t')}"` in your **line** instead of this RootDir
-> component. See `:help 'statusline'` to see how this works.
-
-By defualt all icons are ascii, to be compatible with non-gui environments and
-users without patched fonts. It is trivial to override this for each component
-by setting the its global values.
-
-Global overrides:
-
-```lua
-local components = require("contour.components")
--- let's pretend you have a globals module with nerdfont icons in it
-local globals = require("globals")
-
--- set the modified icon to a random string
-components.Buf.modified_icon = globals.icons.modified
--- change the default name for files
-components.Buf.default_name = "?"
-
--- now using `components`.Buf() will use these new settings
-```
-
-This can be done with any setting on any component. Note that
-[Highlight](#Highlight) pretends to be a component but is actually just a
-function.
 
 ### Highlight
+
+ #TODO: move highlight
 
 This is a function that pretends to be a **component**, call it with a
 highlight group name to get a string that will set the highlight group. Call
@@ -177,64 +130,141 @@ with nothing to reset the highlight group, this will vary between `StatusLine`,
 `WinBar`, and `TabLine` depending on which **line** it is used in. Call with a
 number from 1-9 to set the highlight to `User{number}`.
 
+```lua
+local c = require("contour.components")
+local statusline = {
+    highlight = nil, -- ensure we don't highlight
+    c.highlight("StatuLine"), -- highlight with statusline
+    c.highlight(3), -- highlight with the "User3" group
+    c.highlight(""), -- don't change highlight
+    c.highlight(), -- reset highlight
+}
+```
+
 > NOTE: Mostly used internally. It is recommended that you use groups and their
 > highlights instead of this fake **component**.
 
-### Buf
+### Buffer
 
-This component provides information about the a buffer. By default, gives
-information about the current buffer. It is used by [Buffers](#Buffers) and
-[TabBufs](#TabBufs) to render their buffers. Setting module settings for this
-component will also change the rendering of buffers in `Buffers` and `TabBufs`.
-Note that you can just override the `:render(bufnr)` function to completely
-change buffer rendering. The `bufnr` argument is used for buffer lists.
+This **component** provides information about a buffer. By default, it renders
+the current buffer, but it can also be used to render any buffer if `:render()`
+is called with a buffer number. This component is used by other components that
+have to render buffers, so any changes to `Buffer` defaults will change how
+those components render as well.
 
-| key | type | default | meaning |
-| --- | --- | --- | --- |
-| `highlight` | string | `""` | The highlight group for inactive buffers. Empty by default because this component may be used in the tabline OR the statusline. |
-| `highlight_sel` | string | `""` | The highlight group for active buffers. Empty as above. |
-| `filename` | `"filename"`\|`"fullpath"`\|`"relpath"` | `"filename"` | How the name of this buffer should be displayed. |
-| `default_name` | string | `"UNKNOWN"` | The default name for buffers whose names evaluate to empty after the above modifications. |
-| `modified_icon` | string | `"+"` | The indicator for modified files. |
-| `show_icon` | boolean | true | If the filetype icon should be shown. This is on by default, and will automatically turn off if `nvim-web-devicons` cannot be loaded. It is highly recommended that you do not turn this on manually. |
-| `show_bufnr` | boolean | false | If the bufner should be shown after the file name like so: `file.txt:23`. |
+```lua
+local c = require("contour.components")
+local b = c.buffer
 
-### Tabs
+-- Changes to the `Buffer` class are global, and will even affect `BufList` and
+-- other components that render buffers.
+b.show_bufnr = true
+
+local statusline = {
+    -- instance properties only affect this buffer
+    b {
+        show_bufnr = false,
+        filename = "relpath",
+    }
+}
+```
+
+### TabList
 
 This is a simple **component** that lists tabs by number, with mouse
 interaction and a close button.
 
-| key | type | default | meaning |
-| --- | --- | --- | --- |
-| `highlight` | string | `"TabLine"` | The highlight group for inactive tabs. |
-| `highlgiht_sel` | string | `"TabLineSel"` | The highlight group for the selected tab. |
-| `close_icon` | string | `"x"` | The clickable close icon. |
+```lua
+local c = require("contour.components")
+local tl = c.tablist
 
-### Buffers
+local tabline = {
+    tl {
+        modified_icon = "*", -- icon for when tab has modified buffers
+    },
+}
+```
 
-This is a simple **component** that lists buffers by name:number, and marks
-them if they are modified.
+### BufList
 
-| key | type | default | meaning |
-| --- | --- | --- | --- |
-| `highlight` | string | `"TabLine"` | The highlight group for inactive tabs. |
-| `highlgiht_sel` | string | `"TabLine"` | The highlight group for the selected tab. |
-| `buffers` | table | `{ buflisted = true, bufloaded = true }` | Criteria for buffers to be listed. See `:help getbufinfo()`. Modification not recommended. |
+This is a simple **component** that lists a configurable selection of active
+buffers. Buffers are rendered according to [Buffer](#Buffer), but this can be
+overridden.
 
-Buffers uses the [Buf](#Buf) component internally, so also accepts its keys.
+```lua
+local c = require("contour.components")
+local b = c.buffer
+local bl = c.buflist
+
+b.show_bufnr = true -- show buffer numbers after names
+local tabline = {
+    bl(), -- shows a list of buffers, with numbers according to above setting
+    bl {
+        show_bufnr = false, -- override `Buffer` settings
+        buffers = {}, -- show all buffers, not just listed, loaded buffers
+    },
+}
+```
 
 ### TabBufs
 
-This component lists tabs by their numbers, and within each tab label it will
-also list the buffers visible in that tab. This component inherits [Buf](#Buf)
-settigs for listing buffers.
+This **component** lists tabs by their numbers, and within each tab label it
+will also list the buffers visible in that tab. This **component** renders
+buffer lists like the [BufList](#BufList) **component**, and inherits all of its
+properties.
 
-| key | type | default | meaning |
-| --- | --- | --- | --- |
-| `highlight` | string | `"TabLine"` | The highlight group for inactive tabs. |
-| `highlgiht_sel` | string | `"TabLine"` | The highlight group for the selected tab. |
-| `close_icon` | string | `"x"` | The clickable close icon. |
-| `buffers` | table | `{ buflisted = true, bufloaded = true }` | Criteria for buffers to be listed. See `:help getbufinfo()`. Modification not recommended. |
+```lua
+local c = require("contour.components")
+local b = c.buffer
+local tb = c.tabbufs
 
-TabBufs uses the [Buf](#Buf) component internally, so also accepts its key.
+b.show_bufnr = true -- show buffer number whenever buffers are rendered
+local tabline = {
+    tb {
+        buffers = { -- change `BufList` settings
+            buflisted = true,
+            bufloaded = true,
+            bufmodified = true,
+        },
+        filetype = "text", -- change `Buffer` settings as well
+        close_icon = "CLOSE", -- or just change tabbufs settings
+    },
+}
+```
 
+### Custom Components
+
+You can easily make your own components. A component is really just a wrapper to
+a `_render()` function which is used like any other function. To easily make
+your own components, create a table with a `:render()` function, then use the
+`apply_metatable()` function to make it a class-like component.
+
+```lua
+local c = require("contour.components")
+
+-- define your table
+local TimeComponent = {
+    format = "%H:%M",
+}
+
+-- add the mandatory `:render()` function
+function TimeComponent:render()
+    return vim.fn.strftime(self.format)
+end
+
+-- then set the metatable
+c.apply_metatable(TimeComponent)
+-- optionally add a parent class to inherit from
+--c.apply_metatable(TimeComponent, TimeClass)
+
+-- then you can use it like any other component
+local tabline = {
+    TimeComponent(), -- uses default settings
+    TimeComponent { format = "%Y-%m-%d" } -- or do change it up
+}
+```
+
+The above example is the simplest and most versatile way to create custom
+components. The component's `_render()` function cannot take `self` as an
+argument, and this method automatically works around this in the background. If
+you want to set `_render()` yourself, consider just using a function instead.

@@ -1,9 +1,9 @@
 -- simirian's NeoVim contour
 -- root module
 
-local o = vim.go
-local c = require("contour.components")
-local f = require("contour.functions")
+local o = vim.opt
+local comp = require("contour.components")
+local fns = require("contour.functions")
 
 local H = {}
 
@@ -18,7 +18,7 @@ function H.genitem(item)
       -- this has to be a component
       if type(item._render) == "function" then
         -- if render is a function then we generate its component
-        return f.fncomponent(item._render)
+        return fns.fncomponent(item._render)
       else
         -- otherwise we assume it's a pregenerated string and use it directly
         return item._render
@@ -29,7 +29,7 @@ function H.genitem(item)
     end
   elseif type(item) == "function" then
     -- need to make a function component
-    return f.fncomponent(item)
+    return fns.fncomponent(item)
   else
     return item
   end
@@ -49,7 +49,7 @@ function H.gengroup(group)
   -- start group
   str = str .. "("
   -- add highlight
-  local hl = group.highlight and c.Highlight(group.highlight) or ""
+  local hl = group.highlight and comp.highlight(group.highlight) or ""
   str = str .. hl
   -- add all the items
   for _, item in ipairs(group) do str = str .. H.genitem(item) .. hl end
@@ -65,7 +65,7 @@ end
 function H.genline(line)
   local str = ""
   -- add highlight
-  local hl = (line.highlight and c.Highlight(line.highlight) or "")
+  local hl = (line.highlight and comp.highlight(line.highlight) or "")
   str = str .. hl
   -- add all the items
   for _, item in ipairs(line) do str = str .. H.genitem(item) .. hl end
@@ -80,26 +80,52 @@ local M = {
   tabline = {},
 }
 
-function M.statusline.setup(opts)
-  o.laststatus = opts.mode
-  o.statusline = H.genline(opts[1])
+--- Sets up the statusline.
+--- @param display "never"|"multiple"|"always"|"global" How to show the statusline.
+--- @param line table The statusline spec.
+function M.statusline.setup(display, line)
+  local displays = {
+    never = 0,
+    multiple = 1,
+    always = 2,
+    global = 3,
+  }
+  o.laststatus = displays[display]
+  o.statusline = H.genline(line)
 end
 
+--- Refreshes the statusline and winbar.
 function M.statusline.refresh()
   vim.cmd("redrawstatus!")
 end
 
-function M.winbar.setup(opts)
-  o.winbar = H.genline(opts[1])
+--- Sets up the winbar.
+--- @param line table The winbar spec.
+function M.winbar.setup(line)
+  o.winbar = H.genline(line)
 end
 
+--- Refreshes the winbar and statusline.
 function M.winbar.refresh()
   vim.cmd("redrawstatus!")
 end
 
-function M.tabline.setup(opts)
-  o.showtabline = opts.mode
-  o.tabline = H.genline(opts[1])
+--- Sets up the tabline.
+--- @param display "never"|"multiple"|"always" When to show the tabline.
+--- @param line table The tabline spec.
+function M.tabline.setup(display, line)
+  local displays = {
+    never = 0,
+    multiple = 1,
+    always = 2,
+  }
+  o.showtabline = displays[display]
+  o.tabline = H.genline(line)
+end
+
+--- Refreshes the tabline.
+function M.tabline.refresh()
+  vim.cmd("redrawtabline!")
 end
 
 return M
