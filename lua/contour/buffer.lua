@@ -5,87 +5,75 @@ local vfn = vim.fn
 local comp = require("contour.components")
 local devicons_exists, devicons = pcall(require, "nvim-web-devicons")
 
---- This is the root component for rendering buffers. Many built-in components,
---- including `Buffers` and `TabBufs` will outsource to this component to draw
---- their buffers. Setting values in THIS EXACT table
---- `require("contour.components").Buf.****`
---- will cause buffer rendering to be modified globally. Of course this can
---- always be overridden anywhere you do not want that behavior.
---- @class Buffer : Component
---- @field highlight chl The base highlight group.
---- @field highlight_sel chl The selection highlight group
---- @field filename "filename"|"fullpath"|"relpath"|false The path to the file.
---- @field filetype "icon"|"text"|false How should the filetype be shown.
---- @field default_name string The default name for unnamed buffers.
---- @field modified_icon string|false The icon for modified files.
---- @field show_bufnr boolean Should the bufnr be shown after the filename.
-local Buffer = {
-  highlight = "",
-  highlight_sel = "",
+local H = {}
+
+--- Options to control buffer rendering.
+--- @class Contour.Buffer.Opts
+--- How to display the file name.
+---   "filename" will show the basename of the file
+---   "fullpath" will show the file's full path
+---   "relpath" will show the `":~:."` relative path
+--- @field filename? "filename"|"fullpath"|"relpath"
+--- How to display the file type.
+---   "text" will just show the 'filetype' option
+---   "icon" will get the icon from nvim_web_devicons
+--- @field filetype? "text"|"icon"
+--- The name for buffers which aren't files.
+--- @field default_name? string
+--- The icon to show when a buffer is modified. If false no icon will be shown.
+--- @field modified_icon? string|false
+--- Shows the buffer number after its name.
+--- @field show_bufnr? boolean
+H.defaults = {
+  highlight = nil,
+  highlight_sel = nil,
   filename = "filename",
-  filetype = devicons_exists and "icon" or "text",
+  filetype = "text",
   default_name = "UNKNOWN",
-  modified_icon = "+",
+  modified_icon = "*",
   show_bufnr = false,
 }
 
---- Renders a buffer according to the object's settings.
---- Without a given bufnr, renders the current buffer.
---- @param self Buffer The buffer instance.
---- @param bufnr? number The buffer number.
---- @return string
-function Buffer:render(bufnr)
-  -- get bufnr and bufname
-  bufnr = bufnr or vfn.bufnr("%")
-  local bufname = vfn.bufname(bufnr)
+--- @class Contour.Buffer: Contour.Component
+local M = comp.create(H.defaults)
 
-  -- figure out highlight
-  local hl = ""
-  if bufnr == vfn.bufnr("%") then
-    hl = comp.highlight(self.highlight_sel)
-  else
-    hl = comp.highlight(self.highlight)
-  end
+--- Renders a buffer according to the options if finds.
+--- @param opts Contour.Buffer.Opts The rendering options.
+--- @param bufnr integer The buffer to render.
+--- If `bufnr` is 0 or not present the current buffer will be used.
+--- @return string statusline
+function M.render_buffer(opts, bufnr)
+  bufnr = (bufnr == 0 or not bufnr) and vfn.bufnr() or bufnr
+  local bi = vfn.getbufinfo(bufnr)[1]
+  local current = bufnr == vfn.bufnr(vfn.getreg("%"))
 
-  -- set icon based on bufname
+  local hl = current and comp.highlight(opts.highlight_sel)
+      or comp.highlight(opts.highlight)
+
+  local bn = (opts.filename == "filename" and vfn.fnamemodify(bi.name, ":t"))
+      or (opts.filename == "fullpath" and vfn.fnamemodify(bi.name, ":p"))
+      or (opts.filename == "relpath" and vfn.fnamemodify(bi.name, ":p:~:."))
+  if not bn or bn == "" then bn = opts.default_name end
+
   local ft = ""
-  if self.filetype == "icon" then
-    local icon = devicons.get_icon(bufname)
-    ft = icon or ""
-    -- TODO: devicon highlights
-    if ft ~= "" then ft = ft .. " " end
-  elseif self.filetype == "text" then
-    ft = vim.bo[bufnr].filetype .. " "
+  if bn == opts.default_name then
+  elseif opts.filetype == "icon" and devicons_exists then
+    ft = devicons.get_icon(bi.name, vfn.fnamemodify(bi.name, ":e"),
+      { default = true }) .. " "
+  else
+    ft = "(" .. vim.bo[bufnr].filetype .. ") "
   end
 
-  -- update bufname based on filename property
-  if self.filename then
-    if self.filename == "filename" then
-      bufname = vfn.fnamemodify(bufname, ":t")
-    elseif self.filename == "fullpath" then
-      bufname = vfn.fnamemodify(bufname, ":p")
-    elseif self.filename == "relpath" then
-      bufname = vfn.fnamemodify(bufname, ":p:.")
-    end
-    if not bufname or bufname == "" then
-      bufname = self.default_name
-    end
-    bufname = bufname .. " "
-  end
+  local nr = opts.show_bufnr and " " .. bufnr or ""
 
-  -- add bufnr if wanted
-  local nr = ""
-  if self.show_bufnr then nr = bufnr .. " " end
+  local mod = bi.changed == 1 and opts.modified_icon .. " " or ""
 
-  -- modified icon
-  local mod = ""
-  if vim.bo[bufnr].modified and self.modified_icon then
-    mod = self.modified_icon .. " "
-  end
-
-
-  -- put it all together
-  return hl .. " " .. ft .. bufname .. nr .. mod
+  return ("%s %s%s%s %s"):format(hl, ft, bn, nr, mod)
 end
 
-return comp.apply_metatable(Buffer)
+--- Renders a buffer.
+--- @param opts Contour.Buffer.Opts The rendering options.
+--- @return string statusline
+function M.render(opts) return M.render_buffer(opts, 0) end
+
+return M

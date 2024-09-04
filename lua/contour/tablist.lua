@@ -4,58 +4,59 @@
 local vfn = vim.fn
 local comp = require("contour.components")
 
+local H = {}
+
 --- This component lists tabs by their tabnr.
---- @class TabList : Component
---- @field highlight_sel chl The selection highlight group.
---- @field close_icon string|false The clickable icon to close the tab.
---- @field modified_icon string|false Shows if a tab is modified.
-local TabList = {
+--- @class Contour.TabList.Opts
+--- The highlight for non-selected tabs.
+--- @field highlight? string
+--- The highlight of the currently selected tab.
+--- @field highlight_sel? string
+--- The clickable icon for closing the tab
+--- @field close_icon? string
+--- The icon that shows if the tab has modified buffers.
+--- @field modified_icon? string|false
+H.defaults = {
   highlight = "TabLine",
   highlight_sel = "TabLineSel",
   close_icon = "x",
-  modified_icon = "+",
+  modified_icon = "*",
 }
 
---- Renders a tab list statusline.
+--- @class Contour.TabList: Contour.Component
+local M = comp.create(H.defaults)
+
+--- Renders a tab for the TabList component.
+--- @param opts Contour.TabList.Opts The rendering options.
+--- @param tabnr integer The tab page to render.
+--- If `tabnr` is 0 or not present the current tab will be used.
 --- @return string statusline
-function TabList:render()
+function M.render_tab(opts, tabnr)
+  tabnr = (tabnr == 0 or not tabnr) and vfn.tabpagenr() or tabnr
+  local current = tabnr == vfn.tabpagenr()
+  local hl = current and comp.highlight(opts.highlight_sel)
+      or comp.highlight(opts.highlight)
+  local mod = ""
+  for _, bufnr in ipairs(vfn.tabpagebuflist(tabnr)) do
+    if vim.bo[bufnr].modified
+      and vim.bo[bufnr].buflisted
+    then
+      mod = " " .. opts.modified_icon
+    end
+  end
+  return ("%s%%%dT %d%s %%%dX%s %%X"):format(
+    hl, tabnr, tabnr, mod, tabnr, opts.close_icon)
+end
+
+--- Renders the tab list.
+--- @param opts Contour.TabList.Opts The rendering options.
+--- @return string statusline
+function M.render(opts)
   local str = ""
-  for tab = 1, vfn.tabpagenr("$") do
-    str = str .. self:tabrender(tab)
+  for tabnr = 1, vfn.tabpagenr("$") do
+    str = str .. M.render_tab(opts, tabnr)
   end
   return str
 end
 
---- Renders each tab page.
---- @param self TabList The tabs object with rendering settings.
---- @param tabnr? number The tab number to render.
---- @return string statusline
-function TabList:tabrender(tabnr)
-  tabnr = tabnr or vfn.tabpagenr()
-
-  -- get highlights
-  local hl = ""
-  if vfn.tabpagenr() == tabnr then
-    hl = comp.highlight(self.highlight_sel)
-  else
-    hl = comp.highlight(self.highlight)
-  end
-
-  -- set the icon to close or modified
-  local bufs = vfn.tabpagebuflist()
-  local icon = self.close_icon
-  for _, bufnr in ipairs(bufs) do
-    if vim.bo[bufnr].modified
-        and vim.bo[bufnr].buflisted
-        and vfn.bufloaded(bufnr) == 1
-    then
-      icon = self.modified_icon
-    end
-  end
-
-  -- stitch it together
-  return hl .. "%" .. tabnr .. "T " .. tabnr .. " %" .. tabnr .. "X" .. icon
-      .. " %X"
-end
-
-return comp.apply_metatable(TabList)
+return M

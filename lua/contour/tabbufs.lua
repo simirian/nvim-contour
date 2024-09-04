@@ -1,69 +1,70 @@
 -- simirian's NeoVim contour
 -- tab buffer list component class
 
---- for BufStatus type
---- @meta buflist.lua
-
 local vfn = vim.fn
 local comp = require("contour.components")
-local buflist = require("contour.buflist")
 
---- @class TabBufs : BufList
---- @field close_icon string The clickable icon to close the tab.
-local TabBufs = {
+local H = {}
+
+--- Options to control the TabBuf component's rendering.
+--- @class Contour.TabBufs.Opts: Contour.BufList.Opts
+--- The highlight group for the currently selected buffer in the active tab
+--- page.
+--- @field highlight_buf_sel? string
+--- The clickable icon to use for closing the rendered tab.
+--- @field close_icon? string
+H.defaults = setmetatable({
+  highlight_buf_sel = "TabLineSel",
   close_icon = "x",
-  buffers = {
-    buflisted = true,
-    bufloaded = true,
-  },
-}
+}, { __index = require("contour.buflist").defaults })
 
---- Renders the component.
+--- @class Contour.TabBufs: Contour.BufList
+local M = comp.create(H.defaults)
+
+M.render_buffer = require("contour.buffer").render_buffer
+
+--- Renders a tab for the TabBufs component.
+--- @param opts Contour.TabBufs.Opts The rendering options.
+--- @param tabnr integer The tab page to render.
+--- If `tabnr` is 0 or not present then the current tab page will be used.
 --- @return string statusline
-function TabBufs:render()
-  local str = ""
-  for tab = 1, vfn.tabpagenr('$') do
-    -- highlight based on if tab is active
-    if tab == vfn.tabpagenr() then
-      str = str .. comp.highlight(self.highlight_sel)
-    else
-      str = str .. comp.highlight(self.highlight)
+function M.render_tab(opts, tabnr)
+  tabnr = (tabnr == 0 or not tabnr) and vfn.tabpagenr() or tabnr
+  local current = tabnr == vfn.tabpagenr()
+  local hl = current and comp.highlight(opts.highlight_sel)
+      or comp.highlight(opts.highlight)
+  local bufs = ""
+  local ohl = opts.highlight
+  local ohs = opts.highlight_sel
+  local ohb = opts.highlight_buf_sel
+  if current then
+    opts.highlight = ohs
+    opts.highlight_sel = ohb
+  else
+    opts.highlight = ohl
+    opts.highlight_sel = ohl
+  end
+  for _, bufnr in ipairs(vfn.tabpagebuflist(tabnr)) do
+    if opts.filter(bufnr) then
+      bufs = bufs .. M.render_buffer(opts, bufnr)
     end
-    str = str .. self:tabrender(tab)
+  end
+  opts.highlight = ohl
+  opts.highlight_sel = ohs
+  opts.highlight_buf_sel = ohb
+  return ("%s%%%dT (%d) %s%%%dX%s %%X"):format(
+    hl, tabnr, tabnr, bufs, tabnr, opts.close_icon)
+end
+
+--- Renders a list of tabs and their open buffers.
+--- @param opts Contour.TabBufs.Opts The rendering options.
+--- @return string statusline
+function M.render(opts)
+  local str = ""
+  for tabnr = 1, vfn.tabpagenr("$") do
+    str = str .. M.render_tab(opts, tabnr)
   end
   return str
 end
 
---- Renders each tab as a number and buffer list
---- @param tabnr number The tab number.
---- @return string statusline
-function TabBufs:tabrender(tabnr)
-  -- start with tab header and "(TABNR)"
-  local str = "%" .. tabnr .. "T (" .. tabnr .. ")"
-
-  for _, bufnr in ipairs(vfn.tabpagebuflist(tabnr)) do
-    -- filter based on `buffers` property
-    if
-        ((not self.buffers.buflisted) or vfn.buflisted(bufnr) == 1)
-        and ((not self.buffers.bufloaded) or vfn.bufloaded(bufnr) == 1)
-        and ((not self.buffers.bufmodified) or vim.bo[bufnr].modified)
-    then
-      str = str .. self:bufrender(bufnr)
-    end
-  end
-
-  return str .. "%" .. tabnr .. "X " .. self.close_icon .. " %X"
-end
-
-function TabBufs:bufrender(bufnr)
-  oldhl = self.highlight
-  oldhls = self.highlight_sel
-  self.highlight = ""
-  self.highlight_sel = ""
-  local rendered = buflist.bufrender(self, bufnr)
-  self.highlight = oldhl
-  self.highlight_sel = oldhls
-  return rendered
-end
-
-return comp.apply_metatable(TabBufs, buflist)
+return M

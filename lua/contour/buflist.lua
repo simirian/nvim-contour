@@ -2,36 +2,44 @@
 -- buffer list component class
 
 local vfn = vim.fn
-local comp = require("contour.components")
 local buf = require("contour.buffer")
+local comp = require("contour.components")
 
---- @alias bufstatus {buflisted?: boolean, bufloaded?: boolean, bufmodified?: boolean}
+local H = {}
 
---- A list of buffers displayed according to the `Buffer` component.
---- @class BufList : Buffer
---- @field highlight_sel chl The selection highlight group.
---- @field buffers bufstatus What buffers to include.
---- @field bufrender fun(Component, number): string How to render each buffer.
-local BufList = {
+--- Options to control the BufList component's rendering.
+--- @class Contour.BufList.Opts: Contour.Buffer.Opts
+--- Which (among ALL) buffers to include in the list.
+--- @field filter? fun(buffer: integer): boolean
+H.defaults = setmetatable({
   highlight = "TabLine",
   highlight_sel = "TabLineSel",
-  buffers = {
-    buflisted = true,
-    bufloaded = true,
-  },
+}, { __index = buf.defaults })
 
-  -- render buffers with the generic function
-  bufrender = buf.render,
-}
+--- Determines if a buffer should be included in the buflist.
+--- @param bufnr integer The buffer to decide upon rendering
+--- @reutrn boolean include
+function H.defaults.filter(bufnr)
+  local bi = vfn.getbufinfo(bufnr)[1]
+  return bi.listed == 1 and bi.loaded == 1
+end
 
---- Renders a list of buffers.
+--- @class Contour.BufList: Contour.Component
+local M = comp.create(H.defaults)
+
+M.render_buffer = buf.render_buffer
+
+--- Renders a list of all buffers, which can be filtered by the options.
+--- @param opts Contour.BufList.Opts The rendering options.
 --- @return string statusline
-function BufList:render()
+function M.render(opts)
   local str = ""
-  for _, buffer in ipairs(vfn.getbufinfo(self.buffers)) do
-    str = str .. self:bufrender(buffer.bufnr)
+  for _, bufnr in ipairs(vim.api.nvim_list_bufs()) do
+    if opts.filter(bufnr) then
+      str = str .. M.render_buffer(opts, bufnr)
+    end
   end
   return str
 end
 
-return comp.apply_metatable(BufList, buf)
+return M
