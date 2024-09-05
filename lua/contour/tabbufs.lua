@@ -19,7 +19,7 @@ H.defaults = setmetatable({
 }, { __index = require("contour.buflist").defaults })
 
 --- @class Contour.TabBufs: Contour.BufList
-local M = comp.create(H.defaults)
+local M = comp.create(H.defaults, "tabbufs")
 
 M.render_buffer = require("contour.buffer").render_buffer
 

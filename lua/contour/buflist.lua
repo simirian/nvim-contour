@@ -10,7 +10,7 @@ local H = {}
 --- Options to control the BufList component's rendering.
 --- @class Contour.BufList.Opts: Contour.Buffer.Opts
 --- Which (among ALL) buffers to include in the list.
---- @field filter? fun(buffer: integer): boolean
+--- @field filter? fun(bufnr: integer): boolean
 H.defaults = setmetatable({
   highlight = "TabLine",
   highlight_sel = "TabLineSel",
@@ -25,7 +25,7 @@ function H.defaults.filter(bufnr)
 end
 
 --- @class Contour.BufList: Contour.Component
-local M = comp.create(H.defaults)
+local M = comp.create(H.defaults, "buflist")
 
 M.render_buffer = buf.render_buffer
 

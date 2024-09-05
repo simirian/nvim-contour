@@ -35,7 +35,7 @@ H.defaults = {
 }
 
 --- @class Contour.Buffer: Contour.Component
-local M = comp.create(H.defaults)
+local M = comp.create(H.defaults, "buffer")
 
 --- Renders a buffer according to the options if finds.
 --- @param opts Contour.Buffer.Opts The rendering options.
@@ -66,7 +66,8 @@ function M.render_buffer(opts, bufnr)
 
   local nr = opts.show_bufnr and " " .. bufnr or ""
 
-  local mod = bi.changed == 1 and opts.modified_icon .. " " or ""
+  local mod = (bi.changed == 1 and opts.modified_icon)
+      and opts.modified_icon .. " " or ""
 
   return ("%s %s%s%s %s"):format(hl, ft, bn, nr, mod)
 end
@@ -74,6 +75,8 @@ end
 --- Renders a buffer.
 --- @param opts Contour.Buffer.Opts The rendering options.
 --- @return string statusline
-function M.render(opts) return M.render_buffer(opts, 0) end
+function M.render(opts)
+  return M.render_buffer(opts, 0)
+end
 
 return M

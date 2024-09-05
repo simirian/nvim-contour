@@ -24,7 +24,7 @@ H.defaults = {
 }
 
 --- @class Contour.TabList: Contour.Component
-local M = comp.create(H.defaults)
+local M = comp.create(H.defaults, "tablist")
 
 --- Renders a tab for the TabList component.
 --- @param opts Contour.TabList.Opts The rendering options.

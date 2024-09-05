@@ -1,17 +1,7 @@
 -- simirian's NeoVim contour
 -- components module
 
---- components module
-local M = {
-  --- @type Contour.Buffer? Buffer class
-  buffer = nil,
-  --- @type Contour.BufList? BufList class.
-  buflist = nil,
-  --- @type TabList? TabList class.
-  tablist = nil,
-  --- @type TabBufs? TabBufs class.
-  tabbufs = nil,
-}
+local M = {}
 
 --- Base class for any component.
 --- @class Contour.Component
@@ -19,25 +9,43 @@ local M = {
 --- @field defaults { [string]: any }
 --- This function uses scopes to create a function with no arguments that
 --- renders the component with the given arguments.
---- @field new fun(opts: any): fun(): string
+--- @field call fun(opts: { [string]: any }): fun(): string
+--- This function returns the component table for this component.
+--- @field new fun(opts: { [string]: any }): table
 --- This fucnton sets the default values of the component.
---- @field setup fun(opts: any): string
+--- @field setup fun(opts: { [string]: any }): string
+
+--- List of existing components.
+--- @type { [string]: Contour.Component }
+M.list = setmetatable({}, {
+  __index = function(tbl, key)
+    local ok, comp = pcall(require, "contour." .. key)
+    if not ok then return nil end
+    tbl[key] = comp
+    return comp
+  end
+})
 
 --- Initialises a new component module. All you need to do to create a valid
 --- component with this is puplically expose the returned table, and give it a
 --- render function which takes the component's options as its only argument.
 --- @param defaults { [string]: any } The default render() arguments.
+--- @param name string The name of this component, used for literal table setup.
 --- @return Contour.Component component
-function M.create(defaults)
+function M.create(defaults, name)
   local component = {
     defaults = setmetatable({}, { __index = defaults })
   }
 
-  function component:__call(...) return self.new(...) end
-
-  function component.new(opts)
+  function component.call(opts)
     local lopts = setmetatable(opts or {}, { __index = component.defaults })
     return function() return component.render(lopts) end
+  end
+
+  function component.new(opts)
+    opts = opts or {}
+    opts.component = name
+    return opts
   end
 
   function component.setup(opts)
@@ -47,6 +55,7 @@ function M.create(defaults)
     )
   end
 
+  if name then M.list[name] = component end
   return setmetatable(component, component)
 end
 
@@ -58,19 +67,5 @@ function M.highlight(group)
   if group == "" then return "%*" end -- reset
   return "%#" .. group .. "#"         -- set to group
 end
-
--- lazy require submodules through this one
-setmetatable(M, {
-  __index = function(tbl, key)
-    local exists, component = pcall(require, "contour." .. key)
-    if not exists then
-      vim.notify("contour: nonexistant component: " .. key,
-        vim.log.levels.ERROR)
-      return
-    end
-    tbl[key] = component
-    return component
-  end,
-})
 
 return M
