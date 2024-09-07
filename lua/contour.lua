@@ -137,6 +137,7 @@ function M.setup(opts)
   if opts.buflist then require("contour.buflist").setup(opts.buflist) end
   if opts.tablist then require("contour.tablist").setup(opts.tablist) end
   if opts.tabbufs then require("contour.tabbufs").setup(opts.tabbufs) end
+  if opts.diagnostics then require("contour.diagnostics").setup(opts.diagnostics) end
   -- setup by the loaded components, so we catch user components
   for name, component in pairs(comp.list) do
     if opts[name] then component.setup(opts[name]) end

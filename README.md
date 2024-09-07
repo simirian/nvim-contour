@@ -26,8 +26,8 @@ throughout this README.
     - [x] buffers (buffers list)
     - [x] tab buffers (tab numbers with a list of their buffers)
     - [x] buffer (includes name, filetype icon, modified icon)
+    - [x] diagnostics
     - [ ] vim mode display
-    - [ ] diagnostics
     - [ ] git branch / status
     - [ ] git diff (merge with above?)
     - [ ] last search
@@ -285,6 +285,27 @@ like the `BufList` component, and inherits all of its configuration options.
 tabbufs.setup {
   highlight_buf_sel = "TabLineSel",
   close_icon = "x",
+}
+```
+
+#### Diagnostics
+
+This component lists diagnostic information for a buffer. It can either show
+each level of diagnostic individually (error, warn, etc.) or it can show just
+the total number of diagnostics.
+
+```lua
+-- default values
+diagnositcs.setup {
+  highlight = nil,
+  icons = {
+    error = "e",
+    warn = "w",
+    info = "i",
+    hint = "h",
+    base = "!!",
+  },
+  show = "all",
 }
 ```
 
