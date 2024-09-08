@@ -27,7 +27,7 @@ throughout this README.
     - [x] tab buffers (tab numbers with a list of their buffers)
     - [x] buffer (includes name, filetype icon, modified icon)
     - [x] diagnostics
-    - [ ] vim mode display
+    - [x] vim mode display
     - [ ] git branch / status
     - [ ] git diff (merge with above?)
     - [ ] last search
@@ -306,6 +306,18 @@ diagnositcs.setup {
     base = "!!",
   },
   show = "all",
+}
+```
+
+#### VimMode
+
+This component shows the currently active vim mode as either a single letter or
+a full name. It also supports custom highlights for each mode.
+
+```lua
+vimmode.setup {
+  highlight = nil,
+  display = "letter",
 }
 ```
 

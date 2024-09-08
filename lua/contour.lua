@@ -123,6 +123,10 @@ end
 --- @field tablist? Contour.TabList.Opts
 --- Default tabbufs options.
 --- @field tabbufs? Contour.TabBufs.Opts
+--- Default diagnostics options.
+--- @field diagnostics? Contour.Diagnostics.Opts
+--- Defulat commode options.
+--- @field vimmode? Contour.VimMode.Opts
 M.defaults = {
   show_statusline = "always",
   show_tabline = "always",
@@ -138,6 +142,7 @@ function M.setup(opts)
   if opts.tablist then require("contour.tablist").setup(opts.tablist) end
   if opts.tabbufs then require("contour.tabbufs").setup(opts.tabbufs) end
   if opts.diagnostics then require("contour.diagnostics").setup(opts.diagnostics) end
+  if opts.vimmode then require("contour.vimmode").setup(opts.vimmode) end
   -- setup by the loaded components, so we catch user components
   for name, component in pairs(comp.list) do
     if opts[name] then component.setup(opts[name]) end
