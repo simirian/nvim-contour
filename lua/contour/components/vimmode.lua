@@ -2,7 +2,7 @@
 -- VimMode component class
 
 local vfn = vim.fn
-local comp = require("contour.components")
+local util = require("contour.util")
 
 local H = {}
 
@@ -33,7 +33,7 @@ H.defaults = {
 }
 
 --- @class Contour.VimMode: Contour.Component
-local M = comp.create(H.defaults, "vimmode")
+local M = util.component(H.defaults, "vimmode")
 
 --- Renders the current vim mode.
 --- @param opts Contour.VimMode.Opts The rendering options.
@@ -41,8 +41,8 @@ local M = comp.create(H.defaults, "vimmode")
 function M.render(opts)
   local modechar = vfn.mode():sub(1, 1)
   local hl = type(opts.highlight) == "table"
-      and comp.highlight(opts.highlight[modechar] or opts.highlight.base)
-      or comp.highlight(opts.highlight --[[ @as string? ]])
+      and util.highlight(opts.highlight[modechar] or opts.highlight.base)
+      or util.highlight(opts.highlight --[[ @as string? ]])
 
   -- just lua things lmao, this indexing is a mess
   return ("%s %s "):format(hl, H.modechars[modechar][opts.display])

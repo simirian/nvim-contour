@@ -2,7 +2,7 @@
 -- tab component class
 
 local vfn = vim.fn
-local comp = require("contour.components")
+local util = require("contour.util")
 
 local H = {}
 
@@ -24,7 +24,7 @@ H.defaults = {
 }
 
 --- @class Contour.TabList: Contour.Component
-local M = comp.create(H.defaults, "tablist")
+local M = util.component(H.defaults, "tablist")
 
 --- Renders a tab for the TabList component.
 --- @param opts Contour.TabList.Opts The rendering options.
@@ -34,12 +34,11 @@ local M = comp.create(H.defaults, "tablist")
 function M.render_tab(opts, tabnr)
   tabnr = (tabnr == 0 or not tabnr) and vfn.tabpagenr() or tabnr
   local current = tabnr == vfn.tabpagenr()
-  local hl = current and comp.highlight(opts.highlight_sel)
-      or comp.highlight(opts.highlight)
+  local hl = util.highlight(current and opts.highlight_sel or opts.highlight)
   local mod = ""
   for _, bufnr in ipairs(vfn.tabpagebuflist(tabnr)) do
     if vim.bo[bufnr].modified
-      and vim.bo[bufnr].buflisted
+        and vim.bo[bufnr].buflisted
     then
       mod = " " .. opts.modified_icon
     end

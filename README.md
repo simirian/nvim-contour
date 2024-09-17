@@ -121,12 +121,17 @@ set the spacer's highlight *after* the first group.
 
 ### Highlight
 
-This is a helper function that takes an optional string and gives you the
+`util.highlight()` is a helper function that takes an optional string and gives you the
 statusline string needed to set that highlight group. Providing an empty string
 (`""`) will result in the highlight group resetting to `TabLine`, `StatusLine`,
 etc. depending on where the line is being rendered. Providing `nil` will not
 change anything. Providing a string (`"HighlightGroup"`) with an actual
 highlight group name will set the line to use that highlight group.
+
+Providing a number from 1 to 9 will result in that user highlight group, eg. `2`
+becomes the highlight for `User2`. Note that this highlight will change
+depending on the value of the `StatusLineNC` highlight group. See `:h
+'statusline'` and scroll down to the `*` escape for more information.
 
 Manual highlighting is possible, but it is much easier to use groups with the
 `highlight` key set. Components are not responsible for resetting their
@@ -323,15 +328,17 @@ vimmode.setup {
 
 #### Custom Components
 
-To make your own components you can use the `create(defaults, name)` function.
-`name` is optional, and is used internally in `setup()` to find your component
-when you define it with a table (`{ component = "name" }`).
+To make your own components you can use the `util.component(defaults)` function.
+If you want your component to be found so it can be setup in `setup()`, you need
+to define your component in a `lua/contour/components/` directory on the runtime
+path.
 
-`create()` returns a table which is the component module. To make your component
+`component()` returns a table which is the component module. To make your component
 work, you simply need to define a `render(opts)` function on the component.
 `render()` can call any other functions or use any other values.
 
 ```lua
+-- lua/contour/components/my_component.lua
 local defaults = {
   text = "Hello world!",
   -- any keys here, they get passed to render()
@@ -342,7 +349,7 @@ local defaults = {
 -- setmetatable(defaults { __index = PARENT })
 
 -- create you component class
-local my_component = require("contour.components").create(defaults)
+local my_component = require("contour.util").component(defaults)
 
 -- implement rendering
 function my_component.render(opts)
@@ -351,13 +358,17 @@ function my_component.render(opts)
   --   will get those options here, and any they skip will be from defaults
   return opts.text or "no text"
 end
--- now you can use setup() and new(), and they work as expected
 
-require("contour").setup{
+-- return the component
+return my_component
+```
+
+```lua
+-- wherever you setup contour
+require("contour").setup {
   statusline = {
-    my_component.new(),
-    my_component(),
-    -- other items here
-  },
+    -- this name is the file name of your component module
+    { component = "my_component" }
+  }
 }
 ```

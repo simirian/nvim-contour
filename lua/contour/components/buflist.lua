@@ -2,8 +2,8 @@
 -- buffer list component class
 
 local vfn = vim.fn
-local buf = require("contour.buffer")
-local comp = require("contour.components")
+local buf = require("contour.components.buffer")
+local util = require("contour.util")
 
 local H = {}
 
@@ -25,7 +25,7 @@ function H.defaults.filter(bufnr)
 end
 
 --- @class Contour.BufList: Contour.Component
-local M = comp.create(H.defaults, "buflist")
+local M = util.component(H.defaults)
 
 M.render_buffer = buf.render_buffer
 

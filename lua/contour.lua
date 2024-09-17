@@ -1,15 +1,13 @@
 -- simirian's NeoVim contour
 -- root module
 
-local comp = require("contour.components")
+local components = require("contour.components")
+local util = require("contour.util")
+local vfn = vim.fn
+local api = vim.api
 
 local H = {}
 local M = {}
-
---- Prints a module specific error message.
-function H.error(msg)
-  vim.notify("contour:\n    " .. msg:gsub("\n", "\n    "), vim.log.levels.ERROR)
-end
 
 --- A item that represetns a contour component.
 --- @class Contour.CompSpec: { [string]: any }
@@ -27,13 +25,15 @@ function H.makeitem(item)
     return item()
   elseif type(item) == "table" then
     if type(item.component) == "string" then
-      local component = comp.list[item.component]
+      local component = components[item.component]
       if not component then
-        H.error("Unknown componnet in config: " .. item.component
+        util.error("contour", "Unknown componnet in config: " .. item.component
           .. ". It will be replaced with an empty string.")
         return ""
       else
-        return component.call(item)()
+        return component.render(setmetatable(item, {
+          __index = component.defaults
+        }))
       end
     else
       return H.makegroup(item --[[ @as Contour.Group ]])
@@ -66,7 +66,7 @@ function H.makegroup(group)
   if group.min_width then str = str .. group.min_width end
   if group.max_width then str = str .. "." .. group.max_width end
   if ig then str = str .. "(" end
-  local hl = comp.highlight(group.highlight)
+  local hl = util.highlight(group.highlight)
   str = str .. hl
   for _, item in ipairs(group) do str = str .. H.makeitem(item) .. hl end
   return str .. ((group.left or group.min_width or group.max_width) and "%)")
@@ -87,7 +87,7 @@ M._f = {}
 function H.makeline(linespec)
   -- function that renders the line
   local function fn()
-    local hl = comp.highlight(linespec.highlight)
+    local hl = util.highlight(linespec.highlight)
     local line = hl
     for _, item in ipairs(linespec) do line = line .. H.makeitem(item) .. hl end
     return line
@@ -104,7 +104,7 @@ function H.makeline(linespec)
 end
 
 --- Options for contour.
---- @class Contour.Opts
+--- @class Contour.Opts: { [string]: table }
 --- How the statusline should be shown.
 --- @field show_statusline? "never"|"multiple"|"always"|"global"
 --- How the tabline should be shown.
@@ -115,18 +115,6 @@ end
 --- @field winbar? Contour.LineSpec
 --- The Tabline.
 --- @field tabline? Contour.LineSpec
---- Defulat buffer options.
---- @field buffer? Contour.Buffer.Opts
---- Defult buflist options.
---- @field buflist? Contour.BufList.Opts
---- Defulat tablist options.
---- @field tablist? Contour.TabList.Opts
---- Default tabbufs options.
---- @field tabbufs? Contour.TabBufs.Opts
---- Default diagnostics options.
---- @field diagnostics? Contour.Diagnostics.Opts
---- Defulat commode options.
---- @field vimmode? Contour.VimMode.Opts
 M.defaults = {
   show_statusline = "always",
   show_tabline = "always",
@@ -136,17 +124,16 @@ M.defaults = {
 --- @param opts Contour.Opts
 function M.setup(opts)
   opts = opts or {}
-  -- default plugins are lazy loaded, so set them up manually
-  if opts.buffer then require("contour.buffer").setup(opts.buffer) end
-  if opts.buflist then require("contour.buflist").setup(opts.buflist) end
-  if opts.tablist then require("contour.tablist").setup(opts.tablist) end
-  if opts.tabbufs then require("contour.tabbufs").setup(opts.tabbufs) end
-  if opts.diagnostics then require("contour.diagnostics").setup(opts.diagnostics) end
-  if opts.vimmode then require("contour.vimmode").setup(opts.vimmode) end
-  -- setup by the loaded components, so we catch user components
-  for name, component in pairs(comp.list) do
-    if opts[name] then component.setup(opts[name]) end
+  -- set up components
+  local modules =
+      api.nvim_get_runtime_file("lua/contour/components/*.lua", true)
+  for _, fname in ipairs(modules) do
+    local name = vfn.fnamemodify(fname, ":t:r")
+    if opts[name] then
+      require("contour.components." .. name).setup(opts[name])
+    end
   end
+
   -- set options
   if opts.show_statusline then
     vim.o.laststatus = ({ -- switch expression

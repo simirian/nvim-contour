@@ -2,7 +2,7 @@
 -- buffer component class
 
 local vfn = vim.fn
-local comp = require("contour.components")
+local util = require("contour.util")
 local devicons_exists, devicons = pcall(require, "nvim-web-devicons")
 
 local H = {}
@@ -35,7 +35,7 @@ H.defaults = {
 }
 
 --- @class Contour.Buffer: Contour.Component
-local M = comp.create(H.defaults, "buffer")
+local M = util.component(H.defaults)
 
 --- Renders a buffer according to the options if finds.
 --- @param opts Contour.Buffer.Opts The rendering options.
@@ -47,8 +47,7 @@ function M.render_buffer(opts, bufnr)
   local bi = vfn.getbufinfo(bufnr)[1]
   local current = bufnr == vfn.bufnr(vfn.getreg("%"))
 
-  local hl = current and comp.highlight(opts.highlight_sel)
-      or comp.highlight(opts.highlight)
+  local hl = util.highlight(current and opts.highlight_sel or opts.highlight)
 
   local bn = (opts.filename == "filename" and vfn.fnamemodify(bi.name, ":t"))
       or (opts.filename == "fullpath" and vfn.fnamemodify(bi.name, ":p"))

@@ -2,7 +2,7 @@
 -- diagnostics component class
 
 local vfn = vim.fn
-local comp = require("contour.components")
+local util = require("contour.util")
 
 local H = {}
 
@@ -37,7 +37,7 @@ H.defaults = {
 }
 
 --- @class Contour.Diagnostics: Contour.Component
-local M = comp.create(H.defaults, "diagnostics")
+local M = util.component(H.defaults)
 
 --- Renders a buffer's diagnostics.
 --- @param opts Contour.Diagnostics.Opts The rendering options.
@@ -53,9 +53,9 @@ function M.render_diagnostics(opts, bufnr)
 
   local bhl = ""
   if type(opts.highlight) == "string" then
-    bhl = comp.highlight(opts.highlight --[[ @as string ]])
+    bhl = util.highlight(opts.highlight --[[ @as string ]])
   elseif type(opts.highlight) == "table" and opts.highlight.base then
-    bhl = comp.highlight(opts.highlight.base)
+    bhl = util.highlight(opts.highlight.base)
   end
   str = str .. bhl
 
@@ -69,7 +69,7 @@ function M.render_diagnostics(opts, bufnr)
       local hl = ""
       if type(opts.highlight) == "table" then
         hl = opts.highlight[severity]
-            and comp.highlight(opts.highlight[severity]) or bhl
+            and util.highlight(opts.highlight[severity]) or bhl
       end
       str = str .. ("%s %s %d"):format(hl, icon, counts[level])
     end

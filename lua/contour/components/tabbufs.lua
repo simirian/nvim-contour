@@ -2,7 +2,9 @@
 -- tab buffer list component class
 
 local vfn = vim.fn
-local comp = require("contour.components")
+local util = require("contour.util")
+local buffer = require("contour.components.buffer")
+local buflist = require("contour.components.buflist")
 
 local H = {}
 
@@ -16,12 +18,12 @@ local H = {}
 H.defaults = setmetatable({
   highlight_buf_sel = "TabLineSel",
   close_icon = "x",
-}, { __index = require("contour.buflist").defaults })
+}, { __index = buflist.defaults })
 
 --- @class Contour.TabBufs: Contour.BufList
-local M = comp.create(H.defaults, "tabbufs")
+local M = util.component(H.defaults)
 
-M.render_buffer = require("contour.buffer").render_buffer
+M.render_buffer = buffer.render_buffer
 
 --- Renders a tab for the TabBufs component.
 --- @param opts Contour.TabBufs.Opts The rendering options.
@@ -31,8 +33,7 @@ M.render_buffer = require("contour.buffer").render_buffer
 function M.render_tab(opts, tabnr)
   tabnr = (tabnr == 0 or not tabnr) and vfn.tabpagenr() or tabnr
   local current = tabnr == vfn.tabpagenr()
-  local hl = current and comp.highlight(opts.highlight_sel)
-      or comp.highlight(opts.highlight)
+  local hl = util.highlight(current and opts.highlight_sel or opts.highlight)
   local bufs = ""
   local ohl = opts.highlight
   local ohs = opts.highlight_sel
