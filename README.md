@@ -58,6 +58,25 @@ are referred to by their module name. eg. `lua/contour/components/buffer.lua` is
 the `buffer` component, and you can use it with `{ "buffer", ... }`, replacing
 `...` with whatever options you desire.
 
+If you're unsure about how to configure a component, then just look at the
+source code. You can find it wherever your plugin is locally installed. Running
+the vim command below should show you where it is located. (explanation given
+above command)
+
+         `=` to print output of this lua expression
+         |      the value of the 'runtimepath' option
+         |      |           the part that matches this regular expression
+         v      v           v
+    :lua =vim.o.runtimepath:match("[^,]*nvim%-contour")
+
+You can also find the component modules by running the command below, replacing
+"COMPONENT" with the component you want to find (or "*" to list them all).
+
+                  list files loaded in the runtime
+                  |                      look for the component's lua module
+                  v                      v
+    :lua =vim.api.nvim_get_runtime_file("lua/contour/components/COMPONENT.lua", true)
+
 ### buffer
 
 The `buffer` component displays information about a buffer. All options are
@@ -75,3 +94,14 @@ table below.
 | `"typeicon"` | The icon for the file type (requires `nvim-web-devicons` |
 | `"modified"` | `modified_icon` if the buffer is modified.               |
 | `"bufnr"`    | The buffer's number.                                     |
+
+### diagnostics
+
+The `diagnostics` component displays diagnostic information about a buffer using
+the built-in nvim diagnostics api. When no diagnostics are posted it's pretty
+useless, but it won't show any diagnostics that don't exist, so it won't take up
+that much space either. Can be set to show the `total` count or `each` type of
+diagnostic. You can also configure icons and highlighting for each diagnostic
+type, or `default` which is used for when displaying the total number or 0
+diagnostics. Highlights are linked to diagnostic highlights by default, you can
+set those yourself to change the highlights as well.

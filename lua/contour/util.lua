@@ -20,6 +20,7 @@ local curtab = vim.api.nvim_get_current_tabpage
 
 --- @alias Contour.Component
 --- | Contour.Buffer
+--- | Contour.Diagnostics
 
 local M = {}
 
