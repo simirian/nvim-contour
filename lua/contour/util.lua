@@ -1,78 +1,60 @@
 -- simirian's NeoVim contour
--- utility functions
+-- util module
 
-local H = {}
+local winbuf = vim.api.nvim_win_get_buf
+local winwid = vim.api.nvim_win_get_width
+local curwin = vim.api.nvim_get_current_win
+local curtab = vim.api.nvim_get_current_tabpage
+
+--- @class Contour.Context
+--- The buffer to render for.
+--- @field buf integer
+--- The window to render for.
+--- @field win integer
+--- The tab to render for.
+--- @field tab integer
+--- If this component should be rendered as the current component.
+--- @field current boolean
+--- The maximum width that the component is being given.
+--- @field max_width integer
+
+--- @alias Contour.Component
+--- | Contour.Buffer
+
 local M = {}
 
---- Base class for any component.
---- @class Contour.Component
---- The class defaults.
---- @field defaults { [string]: any }
---- This function uses scopes to create a function with no arguments that
---- renders the component with the given arguments.
---- @field call fun(opts: { [string]: any }): fun(): string
---- This function returns the component table for this component.
---- @field new fun(opts: { [string]: any }): table
---- This fucnton sets the default values of the component.
---- @field setup fun(opts: { [string]: any }): string
-
---- Creates a component from the given defaults table.
---- @param defaults table The defaults provided
---- @return Contour.Component component
-function M.component(defaults)
-  if not defaults then
-    M.error("contour.util", "Tried to create a component with no defaults.\n"
-      .. "If you do not want defaults, provide an empty table.")
-    return {}
-  end
-  local component = {}
-  component.defaults = setmetatable({}, { __index = defaults })
-
-  function component.setup(opts)
-    for key, value in pairs(opts) do
-      component.defaults[key] = value
-    end
-  end
-
-  return component
-end
-
---- Creates a highlighting statusline string for the given group.
---- @param group? string|number The group's name or `User#` group's number.
---- Several cases for the group are as follows:
----   nil: no change in highlighting
----   "": reset highlighting
----   number: set highlighting to that user highlight
----   string: set highlight to that group
---- @return string statusline
+--- Creates a statusline string for highlighting. If group is nil or false, then
+--- there will be no change. If group is an empty string, then the highlight
+--- will be reset. Otherwise group is used as a highlight group name
+--- @param group? string|false The group to set highlighting to.
+--- @return Contour.Primitive statusline
 function M.highlight(group)
-  if not group then return "" end
-  if group == "" then return "%*" end
-  if type(group) == "number" then return "%" .. group .. "*" end
-  if type(group) == "string" then return "%#" .. group .. "#" end
-  M.error("contour.util",
-    "Tried to set highlight with a non number/string value.")
-  return ""
+  if not group then return end
+  if group == "" then return function() return "%*" end end
+  return function() return "%#" .. group .. "#" end
 end
 
---- Prints an error message from the given module.
---- @param module string The module name to use.
---- @param message string The message to print.
-function M.error(module, message)
-  vim.notify(module .. "\n    " .. message:gsub("\n", "\n    "),
-    vim.log.levels.ERROR)
+--- Creates a rendering context based on the current nvim state.
+--- @param scope "global"|"window"
+--- @return Contour.Context
+function M.make_context(scope)
+  local context = {}
+  context.win = scope == "global" and curwin() or vim.g.statusline_winid
+  context.buf = winbuf(context.win)
+  context.tab = curtab()
+  context.current = context.win == curwin()
+  context.max_width = scope == "window" and winwid(context.win) or vim.o.columns
+  return context
 end
 
-H._errors = {}
+--- Prints an error message for a module.
+function M.error(module, msg)
+  vim.notify("nvim-contour " .. module .. ":\n    " .. msg:gsub("\n", "\n    "))
+end
 
---- Prints an error message from the given module.
---- @param module string The module name to use.
---- @param message string The message to print.
-function M.error_once(module, message)
-  if H._errors[module .. message] then return end
-  H._errors[module .. message] = true
-  vim.notify(module .. "\n    " .. message:gsub("\n", "\n    "),
-    vim.log.levels.ERROR)
+--- Prints an error messsage for a module one time.
+function M.error_once(module, msg)
+  vim.notify_once("nvim-contour " .. module .. ":\n    " .. msg:gsub("\n", "\n    "))
 end
 
 return M

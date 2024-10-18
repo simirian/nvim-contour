@@ -3,17 +3,35 @@
 
 local util = require("contour.util")
 
---- Get other componnet modules through table indexing, and print messages if
---- they do not exist. This module is meant to create a simple, unified API.
---- @type { [string]: Contour.Component }
-return setmetatable({}, {
-  __index = function(tbl, key)
-    local exists, module = pcall(require, "contour.components." .. key)
-    if exists then
-      tbl[key] = module
-      return tbl[key]
+local H = {}
+local M = {}
+
+--- Lists all existing component modules.
+--- @return string[] components
+function M.list()
+  return vim.tbl_map(
+    function(e) return vim.fn.fnamemodify(e, ":t:r") end,
+    vim.api.nvim_get_runtime_file("lua/contour/components/*.lua", true))
+end
+
+H.compcache = {}
+
+--- @class Contour.ComponentModule
+--- Renders a component with the given options.
+--- @field render fun(Contour.Component, Contour.Context): Contour.Primitive[]
+--- Sets up a component with options.
+--- @field setup fun(table)
+
+--- Gets a component module by name, handling all requires automagically.
+--- @param name string The name of the desired component.
+--- @return Contour.ComponentModule? module
+function M.get(name)
+    local ok, component = pcall(require, "contour.components." .. name)
+    if not ok then
+      util.error_once("components", "Attempted to use a nonexistant component: " .. name)
+      return
     end
-    util.error("components", "Could not find component: " .. key)
-    return nil
-  end
-})
+    return component
+end
+
+return setmetatable(M, H.mt)

@@ -1,81 +1,111 @@
--- simirian's NeoVim contourbuff
--- buffer component class
+-- simirian's NeoVim contour
+-- buffer component
 
-local vfn = vim.fn
-local util = require("contour.util")
-local devicons_exists, devicons = pcall(require, "nvim-web-devicons")
+local fnamemodify = vim.fn.fnamemodify
+local bufname = vim.fn.bufname
+local highlight = require("contour.util").highlight
+
+--- @diagnostic disable-next-line: unused-local
+local get_icon = function(filename, extension, options) return "" end
+local deviconsOK, devicons = pcall(require, "nvim-web-devicons")
+if deviconsOK then get_icon = devicons.get_icon end
 
 local H = {}
+local M = {}
 
---- Options to control buffer rendering.
---- @class Contour.Buffer.Opts
---- How to display the file name.
----   "filename" will show the basename of the file
----   "fullpath" will show the file's full path
----   "relpath" will show the `":~:."` relative path
---- @field filename? "filename"|"fullpath"|"relpath"
---- How to display the file type.
----   "text" will just show the 'filetype' option
----   "icon" will get the icon from nvim_web_devicons
---- @field filetype? "text"|"icon"
---- The name for buffers which aren't files.
+--- @alias Contour.Buffer.Item
+--- | `"filename"`,
+--- | `"relpath"`,
+--- | `"fullpath"`,
+--- | `"filetype"`,
+--- | `"typeicon"`,
+--- | `"modified"`,
+--- | `"bufnr"`,
+
+--- Displays buffer info.
+--- @class Contour.Buffer
+--- Specifies the type of component.
+--- @field [1] "buffer"
+--- The items to use when rendering the buffer. They will be separated by
+--- spaces.
+--- @field items? Contour.Buffer.Item[]
+--- The icon to use for the "%m" item.
+--- @field modified_icon? string
+--- The default name to give unnamed buffers.
 --- @field default_name? string
---- The icon to show when a buffer is modified. If false no icon will be shown.
---- @field modified_icon? string|false
---- Shows the buffer number after its name.
---- @field show_bufnr? boolean
+--- The highlight when rendering non-selected buffers.
+--- @field highlight_norm? string
+--- The highlight when the component is rendering the selected buffer.
+--- @field highlight_sel? string
 H.defaults = {
-  highlight = nil,
-  highlight_sel = nil,
-  filename = "filename",
-  filetype = "text",
-  default_name = "UNKNOWN",
+  "buffer",
+  items = {
+    "typeicon",
+    "filename",
+    "modified",
+  },
   modified_icon = "*",
-  show_bufnr = false,
+  default_name = "UNKNOWN",
+
+  highlight_norm = "ContourBufferNorm",
+  highlight_sel = "ContourBufferSel",
 }
 
---- @class Contour.Buffer: Contour.Component
-local M = util.component(H.defaults)
+vim.api.nvim_set_hl(0, "ContourBufferNorm", { link = "StatusLineNC" })
+vim.api.nvim_set_hl(0, "ContourBufferSel", { link = "StatusLine" })
 
---- Renders a buffer according to the options if finds.
---- @param opts Contour.Buffer.Opts The rendering options.
---- @param bufnr integer The buffer to render.
---- If `bufnr` is 0 or not present the current buffer will be used.
---- @return string statusline
-function M.render_buffer(opts, bufnr)
-  bufnr = (bufnr == 0 or not bufnr) and vfn.bufnr() or bufnr
-  local bi = vfn.getbufinfo(bufnr)[1]
-  local current = bufnr == vfn.bufnr(vfn.getreg("%"))
+--- @type Contour.Buffer
+H.config = setmetatable({}, { __index = H.defaults })
 
-  local hl = util.highlight(current and opts.highlight_sel or opts.highlight)
+--- Renders a buffer according to the given options, the configured options,
+--- and the defaults in that order of priority. Renders the buffer in
+--- context.buf, and checks it against context.curbuf.
+--- @param opts Contour.Buffer Component spec override.
+--- @param context Contour.Context Rendering context.
+--- @return Contour.Primitive[] line
+function M.render(opts, context)
+  opts = setmetatable(opts, { __index = H.config })
+  local line = {
+    highlight(context.current and opts.highlight_sel or opts.highlight_norm),
+    " ",
+  }
+  local name = bufname(context.buf)
 
-  local bn = (opts.filename == "filename" and vfn.fnamemodify(bi.name, ":t"))
-      or (opts.filename == "fullpath" and vfn.fnamemodify(bi.name, ":p"))
-      or (opts.filename == "relpath" and vfn.fnamemodify(bi.name, ":p:~:."))
-  if not bn or bn == "" then bn = opts.default_name end
-
-  local ft = ""
-  if bn == opts.default_name then
-  elseif opts.filetype == "icon" and devicons_exists then
-    ft = devicons.get_icon(bi.name, vfn.fnamemodify(bi.name, ":e"),
-      { default = true }) .. " "
-  else
-    ft = "(" .. vim.bo[bufnr].filetype .. ") "
+  for _, item in ipairs(opts.items) do
+    if item == "filename" or item == "relpath" or item == "fullpath" then
+      if not name or name == "" then
+        line[2] = line[2] .. opts.default_name .. " "
+      else
+        local modifier = ({
+          filename = ":t",
+          relpath = ":~:.",
+          fullpath = ":p",
+        })[item]
+        line[2] = line[2] .. fnamemodify(name, modifier) .. " "
+      end
+    elseif item == "filetype" then
+      line[2] = line[2] .. vim.bo[context.buf].filetype .. " "
+    elseif item == "typeicon" then
+      local fname = fnamemodify(name, ":t")
+      local ft = vim.bo[context.buf].filetype
+      local icon = get_icon(fname, ft, { default = true })
+      line[2] = line[2] .. icon .. " "
+    elseif item == "modified" then
+      if vim.bo[context.buf].modified then
+        line[2] = line[2] .. opts.modified_icon .. " "
+      end
+    elseif item == "bufnr" then
+      line[2] = line[2] .. context.buf .. " "
+    end
   end
 
-  local nr = opts.show_bufnr and " " .. bufnr or ""
-
-  local mod = (bi.changed == 1 and opts.modified_icon)
-      and opts.modified_icon .. " " or ""
-
-  return ("%s %s%s%s %s"):format(hl, ft, bn, nr, mod)
+  return line
 end
 
---- Renders a buffer.
---- @param opts Contour.Buffer.Opts The rendering options.
---- @return string statusline
-function M.render(opts)
-  return M.render_buffer(opts, 0)
+--- Sets up new default options for the buffer component.
+--- @param opts Contour.Buffer
+function M.setup(opts)
+  H.config = setmetatable(opts or {}, { __index = H.defaults })
 end
 
 return M
