@@ -35,6 +35,15 @@ function M.highlight(group)
   return function() return "%#" .. group .. "#" end
 end
 
+--- Creates a highlight group if it doesn't yet exist
+--- @param group string The group to create.
+--- @param link string The group to link to.
+function M.default_highlight(group, link)
+  if vim.api.nvim_get_hl(0, { name = group }) ~= vim.empty_dict() then
+    vim.api.nvim_set_hl(0, group, { link = link })
+  end
+end
+
 --- Creates a rendering context based on the current nvim state.
 --- @param scope "global"|"window"
 --- @return Contour.Context

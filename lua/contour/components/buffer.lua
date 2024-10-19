@@ -1,9 +1,11 @@
 -- simirian's NeoVim contour
 -- buffer component
 
+local util = require("contour.util")
+
 local fnamemodify = vim.fn.fnamemodify
 local bufname = vim.fn.bufname
-local highlight = require("contour.util").highlight
+local highlight = util.highlight
 
 --- @diagnostic disable-next-line: unused-local
 local get_icon = function(filename, extension, options) return "" end
@@ -34,9 +36,9 @@ local M = {}
 --- The default name to give unnamed buffers.
 --- @field default_name? string
 --- The highlight when rendering non-selected buffers.
---- @field highlight_norm? string
+--- @field highlight_norm? string|false
 --- The highlight when the component is rendering the selected buffer.
---- @field highlight_sel? string
+--- @field highlight_sel? string|false
 H.defaults = {
   "buffer",
   items = {
@@ -51,8 +53,8 @@ H.defaults = {
   highlight_sel = "ContourBufferSel",
 }
 
-vim.api.nvim_set_hl(0, "ContourBufferNorm", { link = "StatusLineNC" })
-vim.api.nvim_set_hl(0, "ContourBufferSel", { link = "StatusLine" })
+util.default_highlight("ContourBufferNorm", "StatusLineNC")
+util.default_highlight("ContourBufferSel", "StatusLine")
 
 --- @type Contour.Buffer
 H.config = setmetatable({}, { __index = H.defaults })

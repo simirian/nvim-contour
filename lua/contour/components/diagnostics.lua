@@ -1,7 +1,9 @@
 -- simirian's NeoVim contour
 -- diagnostics component
 
-local highlight = require("contour.util").highlight
+local util = require("contour.util")
+
+local highlight = util.highlight
 local list_extend = vim.list_extend
 local diagnostic_count = vim.diagnostic.count
 
@@ -24,7 +26,7 @@ local M = {}
 --- @field icons? table<Contour.Diagnostics.Type, string>
 --- Which highlights to use for each diagnostic type. "default" is used for when
 --- there are no diagnostics, or when the total count is shown.
---- @field highlights? table<Contour.Diagnostics.Type, string>
+--- @field highlights? table<Contour.Diagnostics.Type, string|false>
 H.defaults = {
   show = "each",
   icons = {
@@ -43,11 +45,11 @@ H.defaults = {
   },
 }
 
-vim.api.nvim_set_hl(0, "ContourDiagnosticError",   { link = "DiagnosticError" })
-vim.api.nvim_set_hl(0, "ContourDiagnosticWarn",    { link = "DiagnosticWarn"  })
-vim.api.nvim_set_hl(0, "ContourDiagnosticInfo",    { link = "DiagnosticInfo"  })
-vim.api.nvim_set_hl(0, "ContourDiagnosticHint",    { link = "DiagnosticHint"  })
-vim.api.nvim_set_hl(0, "ContourDiagnosticDefault", { link = "DiagnosticOk"    })
+util.default_highlight("ContourDiagnosticError", "DiagnosticError")
+util.default_highlight("ContourDiagnosticWarn", "DiagnosticWarn")
+util.default_highlight("ContourDiagnosticInfo", "DiagnosticInfo")
+util.default_highlight("ContourDiagnosticHint", "DiagnosticHint")
+util.default_highlight("ContourDiagnosticDefault", "DiagnosticOk")
 
 --- @type Contour.Diagnostics
 H.config = setmetatable({}, { __index = H.defaults })
