@@ -9,11 +9,11 @@ an emphasis on user control.<br>
 
 - [ ] _automagically make lua functions work in any line_
 - [ ] click callback functions
-- [ ] _group items with nested tables_
-- [x] components (classes? constructors? idk what to call these)
-- [ ] many built-in components
-    - [ ] _tabs (tab numbers)_
+- [ ] per-filetype configuration
+- [ ] components (classes? constructors? idk what to call these)
+    - [x] group (multiple components in one, with truncation)
     - [x] buffers (buffers list)
+    - [ ] _tabs (tab numbers)_
     - [ ] _tab buffers (tab numbers with a list of their buffers)_
     - [ ] _buffer (includes name, filetype icon, modified icon)_
     - [ ] _diagnostics_
@@ -21,6 +21,7 @@ an emphasis on user control.<br>
     - [ ] git branch / status
     - [ ] git diff (merge with above?)
     - [ ] last search
+    - [ ] custom creation api
 
 ## Installation
 
@@ -70,7 +71,7 @@ above command)
     :lua =vim.o.runtimepath:match("[^,]*nvim%-contour")
 
 You can also find the component modules by running the command below, replacing
-"COMPONENT" with the component you want to find (or "*" to list them all).
+`COMPONENT` with the component you want to find (or `*` to list them all).
 
                   list files loaded in the runtime
                   |                      look for the component's lua module
@@ -105,3 +106,14 @@ diagnostic. You can also configure icons and highlighting for each diagnostic
 type, or `default` which is used for when displaying the total number or 0
 diagnostics. Highlights are linked to diagnostic highlights by default, you can
 set those yourself to change the highlights as well.
+
+### group
+
+The `group` component is used to group multiple components together. You can
+decide a width that the component should use. The `trim` option determines which
+direction should be trimmed and/or padded. eg. if `trim` is `"right"` then items
+that go over `width` will be truncated, and if the line is less than `width` it
+will be padded up to `width` on the right. The list of items to add to the group
+should be placed in `items`. Groups do not request any size of their children
+other than that they fit in the remaining space. Be careful, a component may
+prematurely consume all the remaining space if it is not the last component.

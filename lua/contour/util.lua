@@ -16,11 +16,12 @@ local curtab = vim.api.nvim_get_current_tabpage
 --- If this component should be rendered as the current component.
 --- @field current boolean
 --- The maximum width that the component is being given.
---- @field max_width integer
+--- @field width integer
 
 --- @alias Contour.Component
 --- | Contour.Buffer
 --- | Contour.Diagnostics
+--- | Contour.Group
 
 local M = {}
 
@@ -53,7 +54,7 @@ function M.make_context(scope)
   context.buf = winbuf(context.win)
   context.tab = curtab()
   context.current = context.win == curwin()
-  context.max_width = scope == "window" and winwid(context.win) or vim.o.columns
+  context.width = scope == "window" and winwid(context.win) or vim.o.columns
   return context
 end
 
