@@ -7,7 +7,6 @@ an emphasis on user control.
 
 ## Features
 
-- [ ] _automagically make lua functions work in any line_
 - [ ] click callback functions
 - [ ] per-filetype configuration
 - [x] implementation of equivalent all 'statusline' options, or allow their
@@ -16,6 +15,7 @@ an emphasis on user control.
     - [x] group (multiple components in one, with truncation)
     - [x] space (spacing and alignment component)
     - [x] raw (raw statusline strings)
+    - [x] function (user lambda functions)
     - [x] buffers (buffers list)
     - [ ] _tabs (tab numbers)_
     - [ ] _tab buffers (tab numbers with a list of their buffers)_
@@ -152,3 +152,35 @@ size. This component will respect the width that the parent gives it.
 
 If you don't know what this component does or how to use it, see `:h
 'statusline'` for a guide on statusline formatting.
+
+### function
+
+The `function` component will pass its arguments to the user-defined `fn`, and
+pass its output back to the caller. Usage example below.
+
+```lua
+local function_component = {
+  "function",
+  --- This function is called every time the line is rendered.
+  --- @param opts table This is the table this function is in right here.
+  --- @param context Contour.Context The context we are rendering in.
+  --- - `buf` is the buffer to render
+  --- - `win` is the window to render
+  --- - `tab` is the tab to render
+  --- - `current` is true if the above are current
+  --- - `width` is what the parent thinks this component's width should be
+  --- @return (string|fun(): string)[] line
+  --- MUST return a list of strings and functions. Strings are used directly,
+  --- and all "%" will be escaped. To use statusline escapes, make a function
+  --- return them. Functions will protect their returns from escaping.
+  fn = function(opts, context)
+    return {} -- ALWAYS return a list, even when you have an error
+  end,
+}
+```
+
+Note if you want to use statusline escapes you SHOULD be using the `raw`
+component. That component properly handles the escapes and width calculations.
+The option to protect strings from escapes using functions in the `function`
+component is intended for non-printing escapes, like click callbacks with
+`%@@%X` and highlights with `%##` or `%*`.
