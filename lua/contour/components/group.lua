@@ -13,7 +13,6 @@ local M = {}
 
 --- Component that can include multiple other components.
 --- @class Contour.Group
---- Component type specifier.
 --- @field [1] "group"
 --- Which side to trim from and to place whitespace after.
 --- @field trim? "left"|"right"
@@ -24,6 +23,7 @@ local M = {}
 --- The highlight for the group.
 --- @field highlight? string|false
 H.defaults = {
+  "group",
   trim = "right",
   width = 0,
   items = {},

@@ -8,14 +8,15 @@ local scopy = vim.fn.copy
 local strwidth = vim.fn.strwidth
 local floor = math.floor
 local ceil = math.ceil
-local list_extend = vim.list_extend
 local get_component = require("contour.components").get
 local highlight = util.highlight
 
 local H = {}
 local M = {}
 
+--- Spaces and aligns components.
 --- @class Contour.Space
+--- @field [1] "space"
 --- The maximum width to display items in. Assumes that 0 means infinite.
 --- @field width integer
 --- The items to display. If any item is not valid for some reason, then it is
@@ -29,6 +30,7 @@ local M = {}
 --- The highlight to use for the component.
 --- @field highlight string|false
 H.defaults = {
+  "space",
   width = 0,
   items = {},
   highlight = false,

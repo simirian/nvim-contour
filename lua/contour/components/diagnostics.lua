@@ -17,7 +17,9 @@ local M = {}
 --- | "hint"
 --- | "default"
 
+--- Displays diagnostics for the requested buffer.
 --- @class Contour.Diagnostics
+--- @field [1] "diagnostics"
 --- Whether or not to show each diagnostic type separately or only the total
 --- number of diagnostics.
 --- @field show? "each"|"total"
@@ -28,6 +30,7 @@ local M = {}
 --- there are no diagnostics, or when the total count is shown.
 --- @field highlights? table<Contour.Diagnostics.Type, string|false>
 H.defaults = {
+  "diagnostics",
   show = "each",
   icons = {
     error   = "E",

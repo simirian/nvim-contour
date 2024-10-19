@@ -26,7 +26,6 @@ local M = {}
 
 --- Displays buffer info.
 --- @class Contour.Buffer
---- Specifies the type of component.
 --- @field [1] "buffer"
 --- The items to use when rendering the buffer. They will be separated by
 --- spaces.

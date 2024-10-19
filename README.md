@@ -10,14 +10,17 @@ an emphasis on user control.
 - [ ] _automagically make lua functions work in any line_
 - [ ] click callback functions
 - [ ] per-filetype configuration
+- [x] implementation of equivalent all 'statusline' options, or allow their
+  direct usage (raw statusline component)
 - [ ] components
     - [x] group (multiple components in one, with truncation)
     - [x] space (spacing and alignment component)
+    - [x] raw (raw statusline strings)
     - [x] buffers (buffers list)
     - [ ] _tabs (tab numbers)_
     - [ ] _tab buffers (tab numbers with a list of their buffers)_
     - [ ] _buffer (includes name, filetype icon, modified icon)_
-    - [ ] _diagnostics_
+    - [x] diagnostics
     - [ ] _vim mode display_
     - [ ] git branch / status
     - [ ] git diff (merge with above?)
@@ -137,3 +140,15 @@ enforce truncation use a `group` component within the `space` component.
 
 If you just want a right aligned component, you can use a `group` with `trim =
 "left"` or you can use a space with empty group component children.
+
+### raw
+
+The `raw` component will evaluate the statusline string that you give it,
+convert it to contour's internal format, then use that in teh remainder of the
+rendering pipeline. This may behave differently to standard statuslines in
+certain circumstances, for example when using `%=`, but overall the behavor is
+sane. Setting `width` is like making the statusline render in a window of that
+size. This component will respect the width that the parent gives it.
+
+If you don't know what this component does or how to use it, see `:h
+'statusline'` for a guide on statusline formatting.

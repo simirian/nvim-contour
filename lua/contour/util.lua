@@ -23,6 +23,7 @@ local curtab = vim.api.nvim_get_current_tabpage
 --- | Contour.Diagnostics
 --- | Contour.Group
 --- | Contour.Space
+--- | Contour.Raw
 
 local M = {}
 
