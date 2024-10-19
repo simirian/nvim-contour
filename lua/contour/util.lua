@@ -22,6 +22,7 @@ local curtab = vim.api.nvim_get_current_tabpage
 --- | Contour.Buffer
 --- | Contour.Diagnostics
 --- | Contour.Group
+--- | Contour.Space
 
 local M = {}
 
@@ -60,12 +61,12 @@ end
 
 --- Prints an error message for a module.
 function M.error(module, msg)
-  vim.notify("nvim-contour " .. module .. ":\n    " .. msg:gsub("\n", "\n    "))
+  vim.notify("nvim-contour " .. module .. ":\n    " .. msg:gsub("\n", "\n    "), vim.log.levels.ERROR)
 end
 
 --- Prints an error messsage for a module one time.
 function M.error_once(module, msg)
-  vim.notify_once("nvim-contour " .. module .. ":\n    " .. msg:gsub("\n", "\n    "))
+  vim.notify_once("nvim-contour " .. module .. ":\n    " .. msg:gsub("\n", "\n    "), vim.log.levels.ERROR)
 end
 
 return M

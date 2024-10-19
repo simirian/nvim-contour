@@ -3,15 +3,16 @@
 by simirian
 
 NeoVim plugin for easy but statusline, tabline, and winbar configuration, with
-an emphasis on user control.<br>
+an emphasis on user control.
 
 ## Features
 
 - [ ] _automagically make lua functions work in any line_
 - [ ] click callback functions
 - [ ] per-filetype configuration
-- [ ] components (classes? constructors? idk what to call these)
+- [ ] components
     - [x] group (multiple components in one, with truncation)
+    - [x] space (spacing and alignment component)
     - [x] buffers (buffers list)
     - [ ] _tabs (tab numbers)_
     - [ ] _tab buffers (tab numbers with a list of their buffers)_
@@ -55,7 +56,7 @@ Components are modules which define a set of options, a render function, and a
 setup function. The setup function is used to change the component's default
 options. The render function is used to determine what the component should
 actually look like. Components are all located in `lua/contour/components/` and
-are referred to by their module name. eg. `lua/contour/components/buffer.lua` is
+are referred to by their module name. Eg. `lua/contour/components/buffer.lua` is
 the `buffer` component, and you can use it with `{ "buffer", ... }`, replacing
 `...` with whatever options you desire.
 
@@ -111,9 +112,28 @@ set those yourself to change the highlights as well.
 
 The `group` component is used to group multiple components together. You can
 decide a width that the component should use. The `trim` option determines which
-direction should be trimmed and/or padded. eg. if `trim` is `"right"` then items
+direction should be trimmed and/or padded. Eg. if `trim` is `"right"` then items
 that go over `width` will be truncated, and if the line is less than `width` it
 will be padded up to `width` on the right. The list of items to add to the group
-should be placed in `items`. Groups do not request any size of their children
-other than that they fit in the remaining space. Be careful, a component may
-prematurely consume all the remaining space if it is not the last component.
+should be placed in `items`. Groups do not request any size of their children.
+This means a component may prematurely consume all the remaining space if it is
+not the last component.
+
+### space
+
+The `space` component is meant to be a dynamic spacer for up to three other
+components. It will take its width either from what it is given by the parent
+element (only reliable as a child of a `space` or as a top-level element) or
+from the `width` option. With one child component, that item will be centered
+within `width`. With two children, they will be left and right aligned across
+`width`, and will each be given half width. With three children, they will be
+left, then center, then right aligned, and will each be given one-third width.
+
+Note that while `space` does tell its children how much space they have to
+render, it *does not* enforce this width. This makes it much more forgiving and
+dynamic when it comes to orienting components. The only time there will be an
+actual problem is if the components collide with each other. If you want to
+enforce truncation use a `group` component within the `space` component.
+
+If you just want a right aligned component, you can use a `group` with `trim =
+"left"` or you can use a space with empty group component children.
