@@ -21,8 +21,8 @@ local M = {}
 --- @field width integer
 --- The items to display. If any item is not valid for some reason, then it is
 --- not counted. ie. two valid and one invalid item counts as two items. If
---- there are more than three items their validity will not be tested and there
---- will be an error notification.
+--- there are more than three items they will not render and there will be an
+--- error notification.
 --- 1. centers a single item
 --- 2. splits two items to be left and right aligned
 --- 3. splits the items to be left, then right, then center aligned
@@ -59,12 +59,6 @@ end
 --- @return Contour.Primitive[] line
 function M.render(opts, context)
   if opts._invalid then return {} end
-  if #opts.items > 3 then
-    util.error("space", "Tried to create a space group with more than three items.\n" .. vim.inspect(opts))
-    --- @diagnostic disable-next-line: inject-field This prevents lockups from endless notifications.
-    opts._invalid = true
-    return {}
-  end
 
   opts = setmetatable(opts or {}, { __index = H.config })
 
@@ -77,6 +71,14 @@ function M.render(opts, context)
         opts = item,
         mod = component
       })
+      if #items > 3 then
+        util.error("space", "Tried to create a space group with more than three items.\n" .. vim.inspect(opts))
+        --- @diagnostic disable-next-line: inject-field This prevents lockups from endless notifications.
+        opts._invalid = true
+        return {}
+      end
+    else
+      util.warn_once("space", "Space adjusted around nonexistant component " .. item[1] .. ".")
     end
   end
 

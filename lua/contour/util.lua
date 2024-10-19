@@ -70,4 +70,8 @@ function M.error_once(module, msg)
   vim.notify_once("nvim-contour " .. module .. ":\n    " .. msg:gsub("\n", "\n    "), vim.log.levels.ERROR)
 end
 
+function M.warn_once(module, msg)
+  vim.notify_once("nvim-contour " .. module .. ":\n    " .. msg:gsub("\n", "\n    "), vim.log.levels.WARN)
+end
+
 return M
