@@ -19,12 +19,13 @@ local curtab = vim.api.nvim_get_current_tabpage
 --- @field width integer
 
 --- @alias Contour.Component
---- | Contour.Buffer
---- | Contour.Diagnostics
 --- | Contour.Group
 --- | Contour.Space
 --- | Contour.Raw
 --- | Contour.Function
+--- | Contour.Buffer
+--- | Contour.Diagnostics
+--- | Contour.Buflist
 
 local M = {}
 

@@ -16,7 +16,7 @@ NeoVim plugin for easy statusline, tabline, and winbar configuration.
     - [x] raw (raw statusline strings)
     - [x] function (user lambda functions)
     - [x] buffer (single buffer)
-    - [ ] _buflist (multiple buffers with filter)_
+    - [x] buflist (multiple buffers with filter)
     - [ ] _tabs (tab numbers)_
     - [ ] _tab buffers (tab numbers with a list of their buffers)_
     - [x] diagnostics
