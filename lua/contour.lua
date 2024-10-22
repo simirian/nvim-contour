@@ -64,7 +64,9 @@ end
 --- @param ft string|string[] The filetypes to activate on.
 --- @param spec Contour.Component The line spec.
 function H.setup_line(line, ft, spec)
-  H.cache[line][ft] = H.makeline("statusline", spec)
+  if not H.cache[line][ft] then
+    H.cache[line][ft] = H.makeline(line, spec)
+  end
   if ft == "default" then
     vim.o[line] = H.cache[line][ft]
   else
