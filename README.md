@@ -2,8 +2,7 @@
 
 by simirian
 
-NeoVim plugin for easy but statusline, tabline, and winbar configuration, with
-an emphasis on user control.
+NeoVim plugin for easy statusline, tabline, and winbar configuration.
 
 ## Features
 
@@ -16,10 +15,10 @@ an emphasis on user control.
     - [x] space (spacing and alignment component)
     - [x] raw (raw statusline strings)
     - [x] function (user lambda functions)
-    - [x] buffers (buffers list)
+    - [x] buffer (single buffer)
+    - [ ] _buflist (multiple buffers with filter)_
     - [ ] _tabs (tab numbers)_
     - [ ] _tab buffers (tab numbers with a list of their buffers)_
-    - [ ] _buffer (includes name, filetype icon, modified icon)_
     - [x] diagnostics
     - [ ] _vim mode display_
     - [ ] git branch / status
