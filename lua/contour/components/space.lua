@@ -18,7 +18,7 @@ local M = {}
 --- @class Contour.Space
 --- @field [1] "space"
 --- The maximum width to display items in. Assumes that 0 means infinite.
---- @field width integer
+--- @field width? integer
 --- The items to display. If any item is not valid for some reason, then it is
 --- not counted. ie. two valid and one invalid item counts as two items. If
 --- there are more than three items they will not render and there will be an
@@ -26,9 +26,9 @@ local M = {}
 --- 1. centers a single item
 --- 2. splits two items to be left and right aligned
 --- 3. splits the items to be left, then right, then center aligned
---- @field items Contour.Component[]
+--- @field items? Contour.Component[]
 --- The highlight to use for the component.
---- @field highlight string|false
+--- @field highlight? string|false
 H.defaults = {
   "space",
   width = 0,

@@ -7,7 +7,7 @@ local M = {}
 --- Renders according to a function's output.
 --- @class Contour.Function
 --- @field [1] "function"
---- @field function fun(data: table, context: Contour.Context): Contour.Primitive[]
+--- @field fn? fun(data: table, context: Contour.Context): Contour.Primitive[]
 H.default = {
   "function",
   fn = nil,
