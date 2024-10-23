@@ -6,6 +6,7 @@ local util = require("contour.util")
 local fnamemodify = vim.fn.fnamemodify
 local bufname = vim.fn.bufname
 local highlight = util.highlight
+local tbl_insert = table.insert
 
 --- @diagnostic disable-next-line: unused-local
 local get_icon = function(filename, extension, options) return "" end
@@ -16,13 +17,13 @@ local H = {}
 local M = {}
 
 --- @alias Contour.Buffer.Item
---- | `"filename"`,
---- | `"relpath"`,
---- | `"fullpath"`,
---- | `"filetype"`,
---- | `"typeicon"`,
---- | `"modified"`,
---- | `"bufnr"`,
+--- | `"filename"`
+--- | `"relpath"`
+--- | `"fullpath"`
+--- | `"filetype"`
+--- | `"typeicon"`
+--- | `"modified"`
+--- | `"bufnr"`
 
 --- Displays buffer info.
 --- @class Contour.Buffer
@@ -66,37 +67,37 @@ H.config = setmetatable({}, { __index = H.defaults })
 --- @return Contour.Primitive[] line
 function M.render(opts, context)
   opts = setmetatable(opts, { __index = H.config })
-  local line = {
-    highlight(context.current and opts.highlight_sel or opts.highlight_norm),
-    " ",
-  }
+  local line = {}
+  local hl = highlight(context.current and opts.highlight_sel or opts.highlight_norm)
+  tbl_insert(line, hl)
+  tbl_insert(line, " ")
   local name = bufname(context.buf)
 
   for _, item in ipairs(opts.items) do
     if item == "filename" or item == "relpath" or item == "fullpath" then
       if not name or name == "" then
-        line[2] = line[2] .. opts.default_name .. " "
+        line[#line] = line[#line] .. opts.default_name .. " "
       else
         local modifier = ({
           filename = ":t",
           relpath = ":~:.",
           fullpath = ":p",
         })[item]
-        line[2] = line[2] .. fnamemodify(name, modifier) .. " "
+        line[#line] = line[#line] .. fnamemodify(name, modifier) .. " "
       end
     elseif item == "filetype" then
-      line[2] = line[2] .. vim.bo[context.buf].filetype .. " "
+      line[#line] = line[#line] .. vim.bo[context.buf].filetype .. " "
     elseif item == "typeicon" then
       local fname = fnamemodify(name, ":t")
       local ft = vim.bo[context.buf].filetype
       local icon = get_icon(fname, ft, { default = true })
-      line[2] = line[2] .. icon .. " "
+      line[#line] = line[#line] .. icon .. " "
     elseif item == "modified" then
       if vim.bo[context.buf].modified then
-        line[2] = line[2] .. opts.modified_icon .. " "
+        line[#line] = line[#line] .. opts.modified_icon .. " "
       end
     elseif item == "bufnr" then
-      line[2] = line[2] .. context.buf .. " "
+      line[#line] = line[#line] .. context.buf .. " "
     end
   end
 
