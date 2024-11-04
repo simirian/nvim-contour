@@ -49,8 +49,8 @@ function M.render(opts, context)
   local line = {}
 
   local bopts = copy(opts.buffer or {})
-  bopts.highlight_norm = bopts.highlight_norm or opts.highlight_norm
-  bopts.highlight_sel = bopts.highlight_sel or opts.highlight_sel
+  bopts.highlight_norm = opts.highlight_norm
+  bopts.highlight_sel = opts.highlight_sel
 
   for _, bufnr in ipairs(list_bufs()) do
     if opts.filter(bufnr) then

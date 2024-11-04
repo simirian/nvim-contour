@@ -17,8 +17,8 @@ NeoVim plugin for easy statusline, tabline, and winbar configuration.
     - [x] function (user lambda functions)
     - [x] buffer (single buffer)
     - [x] buflist (multiple buffers with filter)
-    - [ ] _tabs (tab numbers)_
-    - [ ] _tab buffers (tab numbers with a list of their buffers)_
+    - [x] tab (single tab, can show the buffers in that tab)
+    - [ ] tablist (multiple tabs)
     - [x] diagnostics
     - [ ] _vim mode display_
     - [ ] git branch / status
@@ -80,35 +80,6 @@ You can also find the component modules by running the command below, replacing
                   |                      look for the component's lua module
                   v                      v
     :lua =vim.api.nvim_get_runtime_file("lua/contour/components/COMPONENT.lua", true)
-
-### buffer
-
-The `buffer` component displays information about a buffer. All options are
-explained in the annotation for `Contour.Buffer`. How this information is
-displayed can be changed through the `items` key. This determines the items
-shown and in what order they appear in the buffer component. Items are in the
-table below.
-
-| name         | shows                                                    |
-| ------------ | -------------------------------------------------------- |
-| `"filename"` | The name of the file, or `default_name`.                 |
-| `"relpath"`  | The relative path to the file.                           |
-| `"fullpath"` | The full path to the file.                               |
-| `"filetype"` | The value of `:set filetype`.                            |
-| `"typeicon"` | The icon for the file type (requires `nvim-web-devicons` |
-| `"modified"` | `modified_icon` if the buffer is modified.               |
-| `"bufnr"`    | The buffer's number.                                     |
-
-### diagnostics
-
-The `diagnostics` component displays diagnostic information about a buffer using
-the built-in nvim diagnostics api. When no diagnostics are posted it's pretty
-useless, but it won't show any diagnostics that don't exist, so it won't take up
-that much space either. Can be set to show the `total` count or `each` type of
-diagnostic. You can also configure icons and highlighting for each diagnostic
-type, or `default` which is used for when displaying the total number or 0
-diagnostics. Highlights are linked to diagnostic highlights by default, you can
-set those yourself to change the highlights as well.
 
 ### group
 
@@ -183,3 +154,52 @@ component. That component properly handles the escapes and width calculations.
 The option to protect strings from escapes using functions in the `function`
 component is intended for non-printing escapes, like click callbacks with
 `%@@%X` and highlights with `%##` or `%*`.
+
+### buffer
+
+The `buffer` component displays information about a buffer. All options are
+explained in the annotation for `Contour.Buffer`. How this information is
+displayed can be changed through the `items` key. This determines the items
+shown and in what order they appear in the buffer component. Items are in the
+table below.
+
+| name         | shows                                                    |
+| ------------ | -------------------------------------------------------- |
+| `"filename"` | The name of the file, or `default_name`.                 |
+| `"relpath"`  | The relative path to the file.                           |
+| `"fullpath"` | The full path to the file.                               |
+| `"filetype"` | The value of `:set filetype`.                            |
+| `"typeicon"` | The icon for the file type (requires `nvim-web-devicons` |
+| `"modified"` | `modified_icon` if the buffer is modified.               |
+| `"bufnr"`    | The buffer's number.                                     |
+
+### buflist
+
+The `buflist` component displays multiple buffers at once according to a filter
+function. By default it shows a list of all loaded, listed buffers. It has a
+`buffer` key in which a buffer configuration can be placed to determine how the
+buffers are rendered. It also has highlight groups for normal and current
+buffers.
+
+### tab
+
+The `tab` component displays information about the current tab. It uses an
+`items` list like the `buffer` component, and has several keys to configure
+those items. `buflist` configures how the `buflist` item should be rendered.
+
+| name         | shows                                             |
+| ------------ | ------------------------------------------------- |
+| `"number"`   | The tab's number.                                 |
+| `"buflist"`  | A list of buffers visible in this tab.            |
+| `"modified"` | An icon if there are modified buffers in the tab. |
+
+### diagnostics
+
+The `diagnostics` component displays diagnostic information about a buffer using
+the built-in nvim diagnostics api. When no diagnostics are posted it's pretty
+useless, but it won't show any diagnostics that don't exist, so it won't take up
+that much space either. Can be set to show the `total` count or `each` type of
+diagnostic. You can also configure icons and highlighting for each diagnostic
+type, or `default` which is used for when displaying the total number or 0
+diagnostics. Highlights are linked to diagnostic highlights by default, you can
+set those yourself to change the highlights as well.

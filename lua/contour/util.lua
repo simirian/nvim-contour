@@ -4,7 +4,7 @@
 local winbuf = vim.api.nvim_win_get_buf
 local winwid = vim.api.nvim_win_get_width
 local curwin = vim.api.nvim_get_current_win
-local curtab = vim.api.nvim_get_current_tabpage
+local curtab = vim.fn.tabpagenr
 
 --- @class Contour.Context
 --- The buffer to render for.
@@ -24,8 +24,9 @@ local curtab = vim.api.nvim_get_current_tabpage
 --- | Contour.Raw
 --- | Contour.Function
 --- | Contour.Buffer
---- | Contour.Diagnostics
 --- | Contour.Buflist
+--- | Contour.Tab
+--- | Contour.Diagnostics
 
 local M = {}
 
