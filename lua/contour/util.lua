@@ -29,6 +29,7 @@ local curtab = vim.fn.tabpagenr
 --- | Contour.Diagnostics
 
 local M = {}
+local H = {}
 
 --- Creates a statusline string for highlighting. If group is nil or false, then
 --- there will be no change. If group is an empty string, then the highlight
@@ -41,14 +42,30 @@ function M.highlight(group)
   return function() return "%#" .. group .. "#" end
 end
 
+--- default highlight links to refresh on :colorscheme
+--- @type table<string, string>
+H.highlights = {}
+
 --- Creates a highlight group if it doesn't yet exist
 --- @param group string The group to create.
 --- @param link string The group to link to.
 function M.default_highlight(group, link)
-  if vim.api.nvim_get_hl(0, { name = group }) ~= vim.empty_dict() then
+  if not H.highlights[group] then
+    H.highlights[group] = link
+  end
+  if vim.tbl_isempty(vim.api.nvim_get_hl(0, { name = group })) then
     vim.api.nvim_set_hl(0, group, { link = link })
   end
 end
+
+vim.api.nvim_create_autocmd("Colorscheme", {
+  group = vim.api.nvim_create_augroup("Contour", { clear = false }),
+  callback = function()
+    for from, to in pairs(H.highlights) do
+      M.default_highlight(from, to)
+    end
+  end,
+})
 
 --- Creates a rendering context based on the current nvim state.
 --- @param scope "global"|"window"

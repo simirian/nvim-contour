@@ -105,6 +105,7 @@ end
 --- @param opts Contour.Diagnostics
 function M.setup(opts)
   H.config = setmetatable(opts or {}, { __index = H.defaults })
+  H.config.highlights = setmetatable(H.config.highlights or {}, { __index = H.defaults.highlights })
 end
 
 return M
