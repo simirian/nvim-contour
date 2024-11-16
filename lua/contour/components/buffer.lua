@@ -7,6 +7,8 @@ local fnamemodify = vim.fn.fnamemodify
 local bufname = vim.fn.bufname
 local highlight = util.highlight
 local tbl_insert = table.insert
+local tbl_deep_extend = vim.tbl_deep_extend
+local bo = vim.bo
 
 --- @diagnostic disable-next-line: unused-local
 local get_icon = function(filename, extension, options) return "" end
@@ -56,9 +58,6 @@ H.defaults = {
 util.default_highlight("ContourBufferNorm", "StatusLineNC")
 util.default_highlight("ContourBufferSel", "StatusLine")
 
---- @type Contour.Buffer
-H.config = setmetatable({}, { __index = H.defaults })
-
 --- Renders a buffer according to the given options, the configured options,
 --- and the defaults in that order of priority. Renders the buffer in
 --- context.buf, and checks it against context.curbuf.
@@ -66,7 +65,7 @@ H.config = setmetatable({}, { __index = H.defaults })
 --- @param context Contour.Context Rendering context.
 --- @return Contour.Primitive[] line
 function M.render(opts, context)
-  opts = setmetatable(opts, { __index = H.config })
+  opts = tbl_deep_extend("keep", opts or {}, H.defaults)
   local line = {}
   local hl = highlight(context.current and opts.highlight_sel or opts.highlight_norm)
   tbl_insert(line, hl)
@@ -86,14 +85,14 @@ function M.render(opts, context)
         line[#line] = line[#line] .. fnamemodify(name, modifier) .. " "
       end
     elseif item == "filetype" then
-      line[#line] = line[#line] .. vim.bo[context.buf].filetype .. " "
+      line[#line] = line[#line] .. bo[context.buf].filetype .. " "
     elseif item == "typeicon" then
       local fname = fnamemodify(name, ":t")
-      local ft = vim.bo[context.buf].filetype
+      local ft = bo[context.buf].filetype
       local icon = get_icon(fname, ft, { default = true })
       line[#line] = line[#line] .. icon .. " "
     elseif item == "modified" then
-      if vim.bo[context.buf].modified then
+      if bo[context.buf].modified then
         line[#line] = line[#line] .. opts.modified_icon .. " "
       end
     elseif item == "bufnr" then
@@ -102,12 +101,6 @@ function M.render(opts, context)
   end
 
   return line
-end
-
---- Sets up new default options for the buffer component.
---- @param opts Contour.Buffer
-function M.setup(opts)
-  H.config = setmetatable(opts or {}, { __index = H.defaults })
 end
 
 return M

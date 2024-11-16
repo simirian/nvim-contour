@@ -83,13 +83,6 @@ end
 function M.setup(opts)
   opts = opts or {}
 
-  local clist = components.list()
-  for _, component in ipairs(clist) do
-    if opts[component] then
-      components.get(component).setup(opts[component])
-    end
-  end
-
   opts.statusline = opts.statusline or {}
   for ft, spec in pairs(opts.statusline) do
     H.setup_line("statusline", ft, spec)

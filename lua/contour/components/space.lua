@@ -10,6 +10,7 @@ local floor = math.floor
 local ceil = math.ceil
 local get_component = require("contour.components").get
 local highlight = util.highlight
+local tbl_deep_extend = vim.tbl_deep_extend
 
 local H = {}
 local M = {}
@@ -36,9 +37,6 @@ H.defaults = {
   highlight = false,
 }
 
---- @type Contour.Space
-H.config = setmetatable({}, { __index = H.defaults })
-
 --- Determines the length of a rendered item.
 --- @param item? { opts: Contour.Component, mod: Contour.ComponentModule, rendered: Contour.Primitive[] } The item to find the length of.
 --- @return integer length
@@ -59,8 +57,7 @@ end
 --- @return Contour.Primitive[] line
 function M.render(opts, context)
   if opts._invalid then return {} end
-
-  opts = setmetatable(opts or {}, { __index = H.config })
+  opts = tbl_deep_extend("keep", opts or {}, H.defaults)
 
   --- @type { opts: Contour.Component, mod: Contour.ComponentModule, [any]: any }[]
   local items = {}
@@ -131,12 +128,6 @@ function M.render(opts, context)
   tbl_insert(line, rspace)
   tbl_insert(line, right and right.rendered or nil)
   return vim.iter(line):flatten():totable()
-end
-
---- Sets up the contour space group defaults.
---- @param opts Contour.Space The options to use as defaults.
-function M.setup(opts)
-  H.config = setmetatable(opts or {}, { __index = H.defaults })
 end
 
 return M

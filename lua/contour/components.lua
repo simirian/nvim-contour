@@ -19,8 +19,6 @@ H.compcache = {}
 --- @class Contour.ComponentModule
 --- Renders a component with the given options.
 --- @field render fun(Contour.Component, Contour.Context): Contour.Primitive[]
---- Sets up a component with options.
---- @field setup fun(table)
 
 --- Gets a component module by name, handling all requires automagically.
 --- @param name string The name of the desired component.

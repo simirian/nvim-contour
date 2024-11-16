@@ -9,10 +9,10 @@ local list_extend = vim.list_extend
 local tbl_insert = table.insert
 local tbl_contains = vim.tbl_contains
 local copy = vim.deepcopy
-local curtab = vim.api.nvim_get_current_tabpage
 local buflisted = vim.fn.buflisted
 local tabbufs = vim.fn.tabpagebuflist
 local bo = vim.bo
+local tbl_deep_extend = vim.tbl_deep_extend
 
 local H = {}
 local M = {}
@@ -24,7 +24,7 @@ local M = {}
 
 --- Renders a single tab.
 --- @class Contour.Tab
---- @field [1] "tablist"
+--- @field [1] "tab"
 --- The items to draw in the tab.
 --- @field items? Contour.Tab.Item[]
 --- The icon to use to show the tab has modified buffers.
@@ -38,19 +38,13 @@ local M = {}
 --- The highlighting for the current buffer in the buflist item.
 --- @field highlight_buf_sel? string|false
 H.defaults = {
-  "tablist",
+  "tab",
   items = {
     "number",
     "modified",
   },
   modified_icon = "*",
-
-  buflist = {
-    "buflist",
-    buffer = {
-      items = { "typeicon", "filename" },
-    },
-  },
+  buflist = nil,
 
   highlight_norm = "ContourTabNorm",
   highlight_sel = "ContourTabSel",
@@ -61,27 +55,24 @@ util.default_highlight("ContourTabNorm", "TabLine")
 util.default_highlight("ContourTabSel", "TabLineSel")
 util.default_highlight("ContourTabBufSel", "TabLineSel")
 
---- @type Contour.Tab
-H.config = setmetatable({}, { __index = H.defaults })
-
 --- Renders the tab list in context with the given options.
 --- @param opts Contour.Tab The options to render with.
 --- @param context Contour.Context The context to render in.
 --- @return Contour.Primitive[] line
 function M.render(opts, context)
-  opts = setmetatable(opts or {}, { __index = H.config })
+  opts = tbl_deep_extend("keep", opts or {}, H.defaults)
   local line = {}
-  local current = context.current ~= nil and context.current or curtab()
-  local hlstr = current and opts.highlight_sel or opts.highlight_norm
-  tbl_insert(line, highlight(hlstr))
+  local highlight_group = context.current and opts.highlight_sel or opts.highlight_norm
+  tbl_insert(line, highlight(highlight_group))
+  tbl_insert(line, " ")
 
   for _, item in ipairs(opts.items) do
     if item == "number" then
-      tbl_insert(line, " " .. context.tab .. " ")
+      tbl_insert(line, context.tab .. " ")
     elseif item == "buflist" then
       local blopts = copy(opts.buflist or {})
-      blopts.highlight_norm = hlstr
-      blopts.highlight_sel = opts.highlight_buf_sel
+      blopts.buffer.highlight_norm = highlight_group
+      blopts.buffer.highlight_sel = opts.highlight_buf_sel
       blopts.filter = function(bufnr)
         return buflisted(bufnr) == 1 and tbl_contains(tabbufs(context.tab), bufnr)
       end
@@ -95,18 +86,12 @@ function M.render(opts, context)
         end
       end
       if modified then
-        tbl_insert(line, " " .. opts.modified_icon .. " ")
+        tbl_insert(line, opts.modified_icon .. " ")
       end
     end
   end
 
   return line
-end
-
---- Sets the default tablist options.
---- @param opts Contour.Tab The options to make default.
-function M.setup(opts)
-  H.config = setmetatable(opts or {}, { __index = H.defaults })
 end
 
 return M

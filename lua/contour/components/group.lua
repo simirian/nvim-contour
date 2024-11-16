@@ -2,11 +2,11 @@
 -- group component
 
 local strwidth = vim.fn.strwidth
-local list_reverse = vim.fn.reverse
 local tbl_insert = table.insert
 local iter = vim.iter
 local get_component = require("contour.components").get
 local highlight = require("contour.util").highlight
+local tbl_deep_extend = vim.tbl_deep_extend
 
 local H = {}
 local M = {}
@@ -30,15 +30,12 @@ H.defaults = {
   highlight = false,
 }
 
---- @type Contour.Group
-H.config = setmetatable({}, { __index = H.defaults })
-
 --- Renders a group of items specified in opts under the given context.
 --- @param opts Contour.Group The group options.
 --- @param context Contour.Context The Context to render in.
 --- @return Contour.Primitive[] line
 function M.render(opts, context)
-  opts = setmetatable(opts, { __index = H.config })
+  opts = tbl_deep_extend("keep", opts or {}, H.defaults)
   local line = {}
   local width = 0
   local target_width = context.width
@@ -46,14 +43,16 @@ function M.render(opts, context)
     target_width = opts.width
   end
 
+  --- @type Contour.Component[]
   local items = opts.items
   if opts.trim == "left" then
-    items = list_reverse(items)
+    items = vim.iter(items):rev():totable()
   end
 
   for _, item in ipairs(items) do
     local component = get_component(item[1])
     if component then
+      -- TODO: item size
       local rendered = component.render(item, context)
 
       local iwidth = 0
@@ -62,9 +61,9 @@ function M.render(opts, context)
           iwidth = iwidth + strwidth(section)
         end
       end
-      width = width + iwidth
 
-      if width > target_width then break end
+      if width + iwidth > target_width then break end
+      width = width + iwidth
       tbl_insert(line, rendered)
     end
   end
@@ -82,12 +81,6 @@ function M.render(opts, context)
     line = line:rev()
   end
   return line:flatten():totable()
-end
-
---- Sets up the default config for contour groups.
---- @param opts Contour.Group The options to use.
-function M.setup(opts)
-  H.config = setmetatable(opts or {}, { __index = H.defaults })
 end
 
 return M

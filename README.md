@@ -15,12 +15,12 @@ NeoVim plugin for easy statusline, tabline, and winbar configuration.
     - [x] space (spacing and alignment component)
     - [x] raw (raw statusline strings)
     - [x] function (user lambda functions)
-    - [x] buffer (single buffer)
-    - [x] buflist (multiple buffers with filter)
-    - [x] tab (single tab, can show the buffers in that tab)
-    - [ ] tablist (multiple tabs)
+    - [x] buffer
+    - [x] buflist
+    - [x] tab
+    - [ ] *tablist*
     - [x] diagnostics
-    - [ ] _vim mode display_
+    - [ ] *vim mode display*
     - [ ] git branch / status
     - [ ] git diff (merge with above?)
     - [ ] last search
@@ -32,17 +32,17 @@ Just use lazy. `"simirian/nvim-contour"`
 
 ## Configuration
 
-The main config table can include several values. Any key that is the name of a
-component will set that component's default options. Other than that the
-`winbar`, `statusline`, and `tabline` keys will all set their respective lines.
-The lines are each configured in tables whose keys are the file types for which
-they should be set. `"default"` means the line will be set globally.
+Configuration occurs in a single table passed to the `setup()` function. The
+main configuration table lets you set up the statusline, tabline, and winbar in
+their respectively named keys. The each of those values expects a table. The
+keys of that table are either `"default"` to set up a global line, or a single
+string file type or a string array of file types which the line should attach
+to. The values in the line's tables are just the line specs, which really is
+just a component. The base component of a line should probably be a `space`
+component.
 
 ```lua
 {
-  COMPONENT = {
-    ... -- defaults
-  },
   statusline = {
     default = { },
     ["FILETYPE"] = { },
@@ -54,69 +54,69 @@ they should be set. `"default"` means the line will be set globally.
 
 ## Components
 
-Components are modules which define a set of options, a render function, and a
-setup function. The setup function is used to change the component's default
-options. The render function is used to determine what the component should
-actually look like. Components are all located in `lua/contour/components/` and
-are referred to by their module name. Eg. `lua/contour/components/buffer.lua` is
-the `buffer` component, and you can use it with `{ "buffer", ... }`, replacing
-`...` with whatever options you desire.
+Components are lua modules which define a well-formed `render()` function. They
+have no particular requirements beyond that. The `render()` function takes two
+arguments. The first is the configuration table that was placed into the
+`setup()` table above. This probably looks something like this:
 
-If you're unsure about how to configure a component, then just look at the
-source code. You can find it wherever your plugin is locally installed. Running
-the vim command below should show you where it is located. (explanation given
-above command)
+```lua
+--- in setup
+statusline = {
+  default = {
+    "component",
+    option = "value",
+    --- possibly more options here
+  }
+}
+```
 
-         `=` to print output of this lua expression
-         |      the value of the 'runtimepath' option
-         |      |           the part that matches this regular expression
-         v      v           v
-    :lua =vim.o.runtimepath:match("[^,]*nvim%-contour")
+The second argument the render function expects is the rendering context. This
+will include the buffer, window, and tab that the component should render, as
+well as if it should render as active, and how wide it should be.
 
-You can also find the component modules by running the command below, replacing
-`COMPONENT` with the component you want to find (or `*` to list them all).
+Component modules are located in `lua/contour/components/` on the runtime path.
+You can view a list of all existing components (including user-defined
+components) with:
 
-                  list files loaded in the runtime
-                  |                      look for the component's lua module
-                  v                      v
-    :lua =vim.api.nvim_get_runtime_file("lua/contour/components/COMPONENT.lua", true)
+    :lua =require"contour.components".list()
+
+Almost all components use highlighting, so it is worth mentioning that
+highlights can be either a string, nil, or false. When they are nil or false,
+they will be ignored. When a highlight is an empty string, it will reset the
+highlighting via `"%*"` (see `:h statusline`). When a non-empty string, the
+string will be used as a highlight group name.
+
+### space
+
+The `space` component intelligently spaces out up to three components over its
+entire width. See below for split behavior. This component should probably be
+the root component of a line, as it makes it very easy to separate other
+components in a visually pleasing manner.
+
+    |                             component 1                               |
+    | component 1                                               component 2 |
+    | component 1                 component 2                   component 3 |
+
+If you would like a right-aligned component, consider using a `group` with
+`trim` set to `"left"`.
 
 ### group
 
 The `group` component is used to group multiple components together. You can
-decide a width that the component should use. The `trim` option determines which
-direction should be trimmed and/or padded. Eg. if `trim` is `"right"` then items
-that go over `width` will be truncated, and if the line is less than `width` it
-will be padded up to `width` on the right. The list of items to add to the group
-should be placed in `items`. Groups do not request any size of their children.
-This means a component may prematurely consume all the remaining space if it is
-not the last component.
-
-### space
-
-The `space` component is meant to be a dynamic spacer for up to three other
-components. It will take its width either from what it is given by the parent
-element (only reliable as a child of a `space` or as a top-level element) or
-from the `width` option. With one child component, that item will be centered
-within `width`. With two children, they will be left and right aligned across
-`width`, and will each be given half width. With three children, they will be
-left, then center, then right aligned, and will each be given one-third width.
-
-Note that while `space` does tell its children how much space they have to
-render, it *does not* enforce this width. This makes it much more forgiving and
-dynamic when it comes to orienting components. The only time there will be an
-actual problem is if the components collide with each other. If you want to
-enforce truncation use a `group` component within the `space` component.
-
-If you just want a right aligned component, you can use a `group` with `trim =
-"left"` or you can use a space with empty group component children.
+decide a maximum width that the component should use. The `trim` option
+determines which direction should be trimmed and/or padded. Eg. if `trim` is
+`"right"` then items that go over `width` will be truncated on the right, and if
+the line is less than `width` it will be padded up to `width` on the right. The
+list of items to add to the group should be placed in `items`. Groups do not
+request any size of their children. This means a component may prematurely
+consume all the remaining space if it is not the last component.
 
 ### raw
 
 The `raw` component will evaluate the statusline string that you give it,
-convert it to contour's internal format, then use that in teh remainder of the
+convert it to contour's internal format, then use that in the remainder of the
 rendering pipeline. This may behave differently to standard statuslines in
-certain circumstances, for example when using `%=`, but overall the behavor is
+certain circumstances, for example when using `%=`, but overall the behavior is
 sane. Setting `width` is like making the statusline render in a window of that
 size. This component will respect the width that the parent gives it.
 
@@ -125,8 +125,8 @@ If you don't know what this component does or how to use it, see `:h
 
 ### function
 
-The `function` component will pass its arguments to the user-defined `fn`, and
-pass its output back to the caller. Usage example below.
+The `function` component will pass its arguments to the user-defined function
+`f`, and pass its output back to the caller. Usage stub below.
 
 ```lua
 local function_component = {
@@ -143,8 +143,11 @@ local function_component = {
   --- MUST return a list of strings and functions. Strings are used directly,
   --- and all "%" will be escaped. To use statusline escapes, make a function
   --- return them. Functions will protect their returns from escaping.
-  fn = function(opts, context)
-    return {} -- ALWAYS return a list, even when you have an error
+  f = function(opts, context)
+    return {
+      "",
+      function() return "protected" end,
+    } -- ALWAYS return a list, even when you have an error
   end,
 }
 ```

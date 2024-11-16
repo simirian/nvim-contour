@@ -6,6 +6,7 @@ local util = require("contour.util")
 local highlight = util.highlight
 local list_extend = vim.list_extend
 local diagnostic_count = vim.diagnostic.count
+local tbl_deep_extend = vim.tbl_deep_extend
 
 local H = {}
 local M = {}
@@ -54,9 +55,6 @@ util.default_highlight("ContourDiagnosticInfo", "DiagnosticInfo")
 util.default_highlight("ContourDiagnosticHint", "DiagnosticHint")
 util.default_highlight("ContourDiagnosticDefault", "DiagnosticOk")
 
---- @type Contour.Diagnostics
-H.config = setmetatable({}, { __index = H.defaults })
-
 H.autocmd = vim.api.nvim_create_autocmd("DiagnosticChanged", {
   callback = function()
     vim.cmd.redrawstatus()
@@ -82,7 +80,7 @@ end
 --- @param context Contour.Context The buffer and window to be rendering for.
 --- @return Contour.Primitive[] line
 function M.render(opts, context)
-  opts = setmetatable(opts, { __index = H.config })
+  opts = tbl_deep_extend("keep", opts or {}, H.defaults)
   local counts = diagnostic_count(context.buf)
   local total = (counts[1] or 0) + (counts[2] or 0) + (counts[3] or 0) + (counts[4] or 0)
   local line = {}
@@ -100,12 +98,6 @@ function M.render(opts, context)
   end
   line[#line] = line[#line] .. " "
   return line
-end
-
---- @param opts Contour.Diagnostics
-function M.setup(opts)
-  H.config = setmetatable(opts or {}, { __index = H.defaults })
-  H.config.highlights = setmetatable(H.config.highlights or {}, { __index = H.defaults.highlights })
 end
 
 return M

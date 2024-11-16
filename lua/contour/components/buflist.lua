@@ -2,14 +2,15 @@
 -- buffer list component
 
 local buffer = require("contour.components.buffer")
+local util = require("contour.util")
 
-local bufrender = buffer.render
 local buflisted = vim.fn.buflisted
 local bufloaded = vim.fn.bufloaded
 local list_bufs = vim.api.nvim_list_bufs
 local current_buf = vim.api.nvim_get_current_buf
 local copy = vim.deepcopy
 local list_extend = vim.list_extend
+local tbl_deep_extend = vim.tbl_deep_extend
 
 local H = {}
 local M = {}
@@ -21,54 +22,42 @@ local M = {}
 --- @field filter? fun(integer): boolean
 --- The options for rendering the buffers.
 --- @field buffer? Contour.Buffer
---- Highlight for current buffer.
---- @field highlight_norm? string|false
---- Highlight for non-current buffers.
---- @field highlight_sel? string|false
 H.defaults = {
   "buflist",
   filter = function(bufnr)
     return buflisted(bufnr) == 1 and bufloaded(bufnr) == 1
   end,
 
-  buffer = { "buffer" },
-
-  highlight_norm = "TabLine",
-  highlight_sel = "TabLineSel",
+  buffer = {
+    "buffer",
+    highlight_norm = "ContourBuflistNorm",
+    highlight_sel = "ContourBuflistSel",
+  },
 }
 
---- @type Contour.Buflist
-H.config = setmetatable({}, { __index = H.defaults })
+util.default_highlight("ContourBuflistNorm", "TabLine")
+util.default_highlight("ContourBuflistSel", "TabLineSel")
 
 --- Renders the tab list in context with the given options.
 --- @param opts Contour.Buflist The options to render with.
 --- @param context Contour.Context The context to render in.
 --- @return Contour.Primitive[] line
 function M.render(opts, context)
-  opts = setmetatable(opts or {}, { __index = H.config })
+  opts = tbl_deep_extend("keep", opts or {}, H.defaults)
   local line = {}
-
-  local bopts = copy(opts.buffer or {})
-  bopts.highlight_norm = opts.highlight_norm
-  bopts.highlight_sel = opts.highlight_sel
+  local curbuf = current_buf()
+  local ctx = copy(context)
 
   for _, bufnr in ipairs(list_bufs()) do
     if opts.filter(bufnr) then
-      local current = current_buf() == bufnr
-      local bctx = copy(context)
-      bctx.current = current
-      bctx.buf = bufnr
-      list_extend(line, bufrender(bopts, bctx))
+      ctx.buf = bufnr
+      ctx.current = bufnr == curbuf
+      list_extend(line, buffer.render(opts.buffer, ctx))
     end
+    -- TODO: truncation
   end
 
   return line
-end
-
---- Sets up the default buffer list options
---- @param opts Contour.Buflist The options to set as default.
-function M.setup(opts)
-  H.config = setmetatable(opts or {}, { __index = H.defaults })
 end
 
 return M
