@@ -18,7 +18,7 @@ NeoVim plugin for easy statusline, tabline, and winbar configuration.
     - [x] buffer
     - [x] buflist
     - [x] tab
-    - [ ] *tablist*
+    - [x] tablist
     - [x] diagnostics
     - [ ] *vim mode display*
     - [ ] git branch / status
@@ -195,6 +195,12 @@ those items. `buflist` configures how the `buflist` item should be rendered.
 | `"number"`   | The tab's number.                                 |
 | `"buflist"`  | A list of buffers visible in this tab.            |
 | `"modified"` | An icon if there are modified buffers in the tab. |
+
+### tablist
+
+The `tablist` does exactly what it sounds like, it lists all existing tabs.
+Nothing else. The only configuration option is to change how the tabs are
+rendered in the `tab` key.
 
 ### diagnostics
 
