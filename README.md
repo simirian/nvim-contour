@@ -4,6 +4,12 @@ by simirian
 
 NeoVim plugin for easy statusline, tabline, and winbar configuration.
 
+ARCHIVED 2025-03-07: this plugin was basically my way of figuring out how the
+vim status line works. It never really had any right to be a plugin all its own,
+and should have stayed a module in my nvim config. The initial idea of a "low
+level" status line plugin was neat, but disappeared quickly as this repo became
+a generic reimplementation of every other status line plugin but worse.
+
 ## Features
 
 - [ ] click callback functions
